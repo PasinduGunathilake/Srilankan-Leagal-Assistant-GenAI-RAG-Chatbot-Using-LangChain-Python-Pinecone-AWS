@@ -1,0 +1,39 @@
+# Environment
+.venv
+venv/
+lawvenv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+dist/
+build/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data/Models (for RAG chatbot)
+*.pkl
+*.joblib
+*.model
+*.pt
+*.pth
+*.onnx
+data/
+models/
+
+# Logs
+*.log
+logs/
+
