@@ -1,6 +1,5 @@
-from langchain_pinecone import PineconeVectorStore
-from src.prompt import system_prompt_text as system_prompt_text
-from vectorstore import Embeddings, index_name
+from src.prompt import *
+from src.retriever import get_retriever 
 from langchain_ollama import ChatOllama
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
@@ -16,18 +15,7 @@ if not os.getenv("LANGCHAIN_API_KEY"):
 if os.getenv("LANGCHAIN_TRACING_V2") != "true":
     raise RuntimeError("LANGCHAIN_TRACING_V2 not set to 'true'!")
 
-
-# load data from vectorstore
-doc_search = PineconeVectorStore.from_existing_index(
-    index_name=index_name,
-    embedding=Embeddings
-)
-
-# retriever
-Retriever = doc_search.as_retriever(
-    search_type="similarity",
-    search_kwargs={"k":5}
-)
+Retriever=get_retriever()
 
 # Brain(model)
 LLM = ChatOllama(
