@@ -11,7 +11,7 @@ if not os.getenv("PINECONE_API_KEY"):
     raise RuntimeError("PINECONE_API_KEY NotFound!")
 
 # data preprocessing chain
-loaded_data = load_pdf("/data")
+loaded_data = load_pdf("./data")
 filtered_data = doc_filter(loaded_data)
 chunked_data = text_split(filtered_data)
 
