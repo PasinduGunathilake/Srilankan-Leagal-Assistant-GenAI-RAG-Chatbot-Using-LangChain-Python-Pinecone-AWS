@@ -16,8 +16,8 @@ loaded_data = load_pdf("./data")
 filtered_data = doc_filter(loaded_data)
 chunked_data = text_split(filtered_data)
 
+# initialize embeddings
 Embeddings = download_embeddings()
-
 
 # vector db initialize
 pinecone_api_key = os.getenv("PINECONE_API_KEY")
