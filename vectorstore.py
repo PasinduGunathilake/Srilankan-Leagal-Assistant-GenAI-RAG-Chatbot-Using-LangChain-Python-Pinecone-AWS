@@ -1,3 +1,4 @@
+#for store vectors in vector database. run only ones
 from src.helper import load_pdf, doc_filter, text_split, download_embeddings
 from pinecone import Pinecone
 from pinecone import ServerlessSpec
