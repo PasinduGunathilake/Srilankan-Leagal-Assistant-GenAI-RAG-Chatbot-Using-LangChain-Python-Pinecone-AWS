@@ -1,3 +1,4 @@
+from flask import Flask, render_template, jsonify, request
 from src.prompt import *
 from src.retriever import get_retriever 
 from langchain_ollama import ChatOllama
@@ -7,6 +8,9 @@ from langchain.prompts import SystemMessagePromptTemplate, HumanMessagePromptTem
 from dotenv import load_dotenv
 import os
 
+
+# flask app initialize
+app = Flask(__name__)
 
 load_dotenv()
 if not os.getenv("LANGCHAIN_API_KEY"):
@@ -39,6 +43,26 @@ QnA_chain = create_stuff_documents_chain(llm=LLM, prompt=prompt)
 RAG_chain = create_retrieval_chain(Retriever, QnA_chain)
 
 
+# default route
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+# API route for question answering
+@app.route("/get",methods=["GET","POST"])
+def chat():
+    msg = request.form["msg"]
+    input = msg
+    print(f"input: {input}")
+    response = RAG_chain.invoke({"input":input})
+    print(f"response: {response['answer']}")
+    return str(response['answer'])
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8080, debug=True)
+
+'''
 question = "what punishments of intellectual property law in sri lanka?"
 response = RAG_chain.invoke({"input":question})
 print(response['answer'])
+'''
