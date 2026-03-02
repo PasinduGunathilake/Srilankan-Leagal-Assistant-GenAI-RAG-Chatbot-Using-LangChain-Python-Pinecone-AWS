@@ -149,7 +149,7 @@ ollama list
 
 ```bash
 git clone https://github.com/PasinduGunathilake/Srilankan-LAW-Assistant-GenAI-RAG-Chatbot-Using-LangChain-Python-Pinecone-Streamlit-AWS.git
-cd "Law RAG Chatbot"
+cd "Legal RAG Chatbot"
 ```
 
 ### Step 2 — Create a Virtual Environment
