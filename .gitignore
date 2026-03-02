@@ -30,7 +30,7 @@ Thumbs.db
 *.pt
 *.pth
 *.onnx
-data/
+*.pdf
 models/
 
 # Logs
