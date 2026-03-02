@@ -1,7 +1,8 @@
 from flask import Flask, render_template, jsonify, request
 from src.prompt import *
+from src.Guardrails import input_guardrail, REFUSAL_MESSAGE
 from src.retriever import get_retriever 
-from langchain_ollama import ChatOllama
+from langchain_ollama import ChatOllama # this for locally installed deployment
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.prompts import SystemMessagePromptTemplate, HumanMessagePromptTemplate, ChatPromptTemplate
@@ -13,6 +14,7 @@ import os
 app = Flask(__name__)
 
 load_dotenv()
+
 if not os.getenv("LANGCHAIN_API_KEY"):
     raise RuntimeError("LANGCHAIN_API_KEY NotFound!")
 
@@ -22,10 +24,26 @@ if os.getenv("LANGCHAIN_TRACING_V2") != "true":
 Retriever=get_retriever()
 
 # Brain(model)
+
 LLM = ChatOllama(
     model="gemma3:1b",
     temperature=0.1
 )
+
+'''
+LLM = ChatOpenAI(
+    model = "google/gemini-2.5-flash:free",
+    openai_api_key=os.getenv("OPENROUTER_API_KEY"),
+    openai_api_base = "https://openrouter.ai/api/v1",
+    temperature = 0.1
+)
+
+LLM = ChatGoogleGenerativeAI(
+    model="gemini-2.5-flash",
+    google_api_key=os.getenv("GOOGLE_API_KEY"),
+    temperature=0.1,
+    max_retries=2
+)'''
 
 # prompt template
 system_prompt = SystemMessagePromptTemplate.from_template(system_prompt_text)
@@ -54,6 +72,12 @@ def chat():
     msg = request.form["msg"]
     input = msg
     print(f"input: {input}")
+
+    # add input level Guardrail
+    if not input_guardrail(input):
+        print("Blocked by input guardrail")
+        return REFUSAL_MESSAGE
+    
     response = RAG_chain.invoke({"input":input})
     print(f"response: {response['answer']}")
     return str(response['answer'])

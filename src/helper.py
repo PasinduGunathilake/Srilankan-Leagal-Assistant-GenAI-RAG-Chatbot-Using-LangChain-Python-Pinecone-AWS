@@ -18,7 +18,7 @@ def load_pdf(path):
 
 
 
-# filetr file content
+# filetr file content for document cleaning 
 NOISE_PATTERNS = [
     r"^list of acts",
     r"^table of contents",

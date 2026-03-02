@@ -14,6 +14,7 @@ def load_vectorstore_index():
         embedding=Embeddings
     )
     return doc_search
+    
 
 # retriever function
 def get_retriever(k: int=5):
