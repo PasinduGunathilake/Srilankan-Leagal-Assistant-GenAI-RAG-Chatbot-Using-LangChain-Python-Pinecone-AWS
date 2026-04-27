@@ -1,4 +1,4 @@
-# ⚖️ Sri Lankan Law AI Assistant
+# ⚖️ Sri Lankan Legal AI Assistant
 
 > A **Retrieval-Augmented Generation (RAG)** chatbot built with **LangChain · Pinecone · Ollama · Flask** — answers legal questions strictly grounded in Sri Lankan statutory documents.
 
@@ -8,6 +8,7 @@
   <img src="https://img.shields.io/badge/Pinecone-Vector%20DB-purple?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Ollama-gemma3%3A1b-orange?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Flask-3.1.1-red?style=for-the-badge&logo=flask"/>
+  <img src="https://img.shields.io/badge/License-Educational-lightgrey?style=for-the-badge"/>
 </p>
 
 ---
@@ -25,15 +26,28 @@
 - [How Each Module Works](#-how-each-module-works)
 - [Data Ingestion — One-Time Setup](#-data-ingestion--one-time-setup)
 - [Running the Application](#-running-the-application)
+- [API Reference](#-api-reference)
 - [Switching LLM Backends](#-switching-llm-backends)
 - [LangSmith Observability](#-langsmith-observability)
 - [Troubleshooting](#-troubleshooting)
+- [Contributing](#-contributing)
+- [Author](#-author)
+- [License](#-license)
 
 ---
 
 ## 🧠 Overview
 
-The **Sri Lankan Law AI Assistant** is a domain-specific legal chatbot that answers questions **exclusively** from the content of Sri Lankan legal PDF documents. It will never hallucinate or use general world knowledge — it either finds the answer in the indexed statutes or says it cannot.
+The **Sri Lankan Legal AI Assistant** is a domain-specific legal chatbot that answers questions **exclusively** from the content of Sri Lankan legal PDF documents. It will never hallucinate or use general world knowledge — it either finds the answer in the indexed statutes or says it cannot.
+
+### Core Principles
+
+| Principle | Implementation |
+|-----------|---------------|
+| **Grounded answers only** | LLM is forbidden from using external knowledge via system prompt |
+| **Citation-first responses** | Every answer must reference the Act name, section, or page |
+| **Domain safety** | Input guardrail blocks non-legal queries before touching the LLM |
+| **Privacy by default** | Runs entirely locally with Ollama (no data leaves your machine) |
 
 ### How it works at a high level
 
@@ -49,7 +63,36 @@ The **Sri Lankan Law AI Assistant** is a domain-specific legal chatbot that answ
 
 ## 🏗️ System Architecture
 
-![RAG System Architecture](static/rag_architecture.png)
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        USER BROWSER                                  │
+│                  http://localhost:8080                                │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │ POST /get  { msg: "..." }
+                             ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                         FLASK APP  (app.py)                          │
+│                                                                      │
+│  ┌───────────────────┐    ┌────────────────────────────────────────┐ │
+│  │  Input Guardrail  │-NO→│   REFUSAL_MESSAGE (no LLM call)        │ │
+│  │  (Guardrails.py)  │    └────────────────────────────────────────┘ │
+│  └────────┬──────────┘                                               │
+│           │ YES — legal query detected                               │
+│           ▼                                                          │
+│  ┌─────────────────────────────────────────────────────────────────┐ │
+│  │                  RAG Chain (LangChain)                           │ │
+│  │                                                                  │ │
+│  │  Query → [Pinecone Retriever] → top-5 chunks                    │ │
+│  │            ↓                                                     │ │
+│  │  [ChatPromptTemplate] ← system_prompt_text + {context} + {input}│ │
+│  │            ↓                                                     │ │
+│  │  [Ollama gemma3:1b] → answer                                    │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
+                             │
+                             ▼
+                    JSON text response → Browser
+```
 
 The diagram above shows the complete request/response lifecycle:
 
@@ -63,7 +106,31 @@ The diagram above shows the complete request/response lifecycle:
 
 ## 🔄 Data Ingestion Pipeline
 
-![Data Ingestion Pipeline](static/data_pipeline.png)
+```
+ data/*.pdf
+     │
+     ▼
+ load_pdf()          — DirectoryLoader + PyPDFLoader
+     │                 Reads all PDF pages into Document objects
+     ▼
+ doc_filter()        — Noise removal + legal signal detection
+     │                 Drops TOC pages, gazette headers, price tags
+     │                 Keeps pages with strong/weak legal patterns
+     ▼
+ text_split()        — RecursiveCharacterTextSplitter
+     │                 chunk_size=800, chunk_overlap=100
+     ▼
+ download_embeddings() — all-MiniLM-L6-v2 (384-dim)
+     │
+     ▼
+ Pinecone.create_index()   — cosine metric, AWS us-east-1
+     │
+     ▼
+ PineconeVectorStore.from_documents()
+     │
+     ▼
+ Index: "leagal-rag-ai-chatbot" ✅ Ready for retrieval
+```
 
 The ingestion pipeline (`vectorstore.py`) processes raw PDF files into searchable vector embeddings stored in Pinecone. This runs **only once** (or any time you add new documents).
 
@@ -78,8 +145,9 @@ Law RAG Chatbot/
 ├── vectorstore.py          # 📦 One-time ingestion: PDFs → Pinecone
 ├── requirements.txt        # 📋 Python dependencies
 ├── setup.py                # ⚙️  Package metadata (editable install)
-├── .env                    # 🔑 API keys and environment variables
+├── .env                    # 🔑 API keys and environment variables (not committed)
 ├── .gitignore
+├── skeleton.sh             # 🗂️  Shell script for project scaffolding
 │
 ├── data/                   # 📄 Place Sri Lankan law PDF files here
 │   └── *.pdf
@@ -114,6 +182,7 @@ Law RAG Chatbot/
 | **Observability** | LangSmith | Chain tracing and debugging |
 | **PDF Parser** | PyPDF + LangChain DirectoryLoader | Extracts text from statutes |
 | **Environment** | python-dotenv | Secure key management |
+| **Packaging** | setuptools (editable install) | `src/` importable as a package |
 
 ---
 
@@ -149,7 +218,7 @@ ollama list
 
 ```bash
 git clone https://github.com/PasinduGunathilake/Srilankan-LAW-Assistant-GenAI-RAG-Chatbot-Using-LangChain-Python-Pinecone-Streamlit-AWS.git
-cd "Legal RAG Chatbot"
+cd "Law RAG Chatbot"
 ```
 
 ### Step 2 — Create a Virtual Environment
@@ -235,6 +304,17 @@ load_pdf() → doc_filter() → text_split() → download_embeddings()
 | `text_split(doc_list)` | Splits filtered documents into overlapping chunks using `RecursiveCharacterTextSplitter` — **800 character chunks** with **100 character overlap** — to preserve sentence context across boundaries |
 | `download_embeddings()` | Loads `sentence-transformers/all-MiniLM-L6-v2` from HuggingFace — a fast, lightweight model that produces **384-dimensional** semantic vectors |
 
+#### Document Filtering Logic
+
+```
+For each page in loaded PDFs:
+  1. Skip pages with < 100 characters (blank / near-blank)
+  2. Skip pages matching any NOISE_PATTERN (TOC, gazette header, price, etc.)
+  3. KEEP if ≥ 1 LEGAL_PATTERN match (e.g., "Act No.", "section 5", "enactment")
+  4. KEEP if ≥ 4 WEAK_LEGAL_SIGNAL matches (e.g., "shall", "court", "minister")
+  5. Otherwise discard
+```
+
 ---
 
 ### `src/prompt.py` — System Prompt
@@ -285,7 +365,7 @@ Connects to the pre-populated Pinecone index and returns a LangChain-compatible 
 
 | Function | What it does |
 |----------|-------------|
-| `load_vectorstore_index()` | Opens the `law-rag-genai-chatbot` index using the same embedding model used during ingestion |
+| `load_vectorstore_index()` | Opens the `leagal-rag-ai-chatbot` index using the same embedding model used during ingestion |
 | `get_retriever(k=5)` | Returns a similarity-search retriever that fetches the **top 5** most semantically relevant chunks for a given query |
 
 ---
@@ -300,7 +380,7 @@ Step 2: doc_filter(loaded_data)     → noise-removed Document list
 Step 3: text_split(filtered_data)   → chunked Document list
 Step 4: download_embeddings()       → HuggingFace embedding model
 Step 5: Pinecone.create_index()     → creates index if not exists
-        name="law-rag-genai-chatbot"
+        name="leagal-rag-ai-chatbot"
         dimension=384, metric="cosine"
         spec=ServerlessSpec(cloud="aws", region="us-east-1")
 Step 6: PineconeVectorStore.from_documents() → uploads all chunks
@@ -346,6 +426,8 @@ data/
 └── ...
 ```
 
+> 💡 **Tip:** The more statutes you add, the broader the assistant's knowledge base. All PDFs in `data/` are automatically discovered and ingested.
+
 ### Step 6 — Run the Ingestion Script
 
 > ⚠️ **Run this only once** (or when adding new PDFs). It will create and populate the Pinecone index. May take several minutes for large document sets.
@@ -361,7 +443,7 @@ Filtering 1240 documents...
 kept 874/1240 (70.5%)
 ```
 
-Once complete, your `law-rag-genai-chatbot` index in Pinecone is ready.
+Once complete, your `leagal-rag-ai-chatbot` index in Pinecone is ready.
 
 ---
 
@@ -403,7 +485,48 @@ What constitutes an offence under the Companies Act?
 
 ---
 
-## 🔀 Switching LLM Backends
+## � API Reference
+
+The Flask server exposes two endpoints:
+
+### `GET /`
+
+Serves the chat web interface.
+
+**Response:** `200 OK` — HTML page (`templates/index.html`)
+
+---
+
+### `POST /get`
+
+Accepts a user message and returns an AI-generated legal answer.
+
+**Request (form-encoded):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `msg` | `string` | The user's question |
+
+**Example (curl):**
+
+```bash
+curl -X POST http://localhost:8080/get \
+     -d "msg=What are the penalties under the Penal Code section 302?"
+```
+
+**Response:**
+
+| Status | Condition | Body |
+|--------|-----------|------|
+| `200 OK` | Legal query — answer found | Plain text answer with citations |
+| `200 OK` | Legal query — no context found | *"The query cannot be answered..."* |
+| `200 OK` | Non-legal query blocked by guardrail | `REFUSAL_MESSAGE` string |
+
+> **Note:** The API always returns `200`. Error conditions are communicated as plain-text strings in the body, not HTTP error codes.
+
+---
+
+## �🔀 Switching LLM Backends
 
 The default is Ollama (local, free). Two cloud alternatives are already prepared in `app.py` as comments — just uncomment and configure:
 
@@ -443,7 +566,7 @@ pip install langchain-google-genai
 ```
 
 | | Ollama | OpenRouter | Google Gemini |
-|-|--------|-----------|--------------|
+|-|--------|-----------|----|
 | **Cost** | Free | Free tier | Pay-per-token |
 | **Privacy** | ✅ Fully local | ❌ Cloud | ❌ Cloud |
 | **Speed** | Depends on hardware | Fast | Fast |
@@ -477,6 +600,29 @@ Every chain invocation is traced to **LangSmith**, giving you full visibility in
 | Guardrail blocks a valid question | Query lacks legal keywords | Rephrase to include *law*, *court*, *act*, *section*, or *penalty* |
 | Slow first response (~30s) | Embedding model downloading | `all-MiniLM-L6-v2` (~90 MB) downloads once; subsequent starts are fast |
 | `ModuleNotFoundError: src` | Package not installed | Ensure you ran `pip install -r requirements.txt` (includes `-e .`) |
+| Pinecone index not found | Index name typo in `retriever.py` | Confirm index name is `leagal-rag-ai-chatbot` (matches `vectorstore.py`) |
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. **Fork** the repository and create a feature branch:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+2. **Make your changes** — add new statutes to `data/`, improve filtering patterns, or enhance the UI.
+3. **Test** your changes locally before submitting.
+4. **Submit a Pull Request** with a clear description of what was changed and why.
+
+### Areas open for contribution
+
+- 📄 **Additional legal documents** — more Sri Lankan statutes
+- 🔍 **Improved guardrail patterns** — better topic detection
+- 🎨 **UI enhancements** — chat history, citation highlighting
+- 🔧 **Alternative embedding models** — for better retrieval accuracy
+- 🧪 **Test suite** — unit tests for `helper.py` and `Guardrails.py`
 
 ---
 
@@ -488,28 +634,11 @@ Every chain invocation is traced to **LangSmith**, giving you full visibility in
 
 ---
 
----
-
 ## 📜 License
 
-MIT License
+This project is for **educational and research purposes**.
+Legal documents used must be sourced from official Sri Lankan government publications.
 
-Copyright (c) 2026 Pasindu Gunathilake
+---
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+*Built with ❤️ using LangChain, Pinecone, Ollama, and Flask.*
