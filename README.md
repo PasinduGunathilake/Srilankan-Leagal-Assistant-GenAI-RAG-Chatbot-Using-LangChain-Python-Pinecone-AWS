@@ -217,7 +217,7 @@ ollama list
 ### Step 1 — Clone the Repository
 
 ```bash
-git clone https://github.com/PasinduGunathilake/Srilankan-LAW-Assistant-GenAI-RAG-Chatbot-Using-LangChain-Python-Pinecone-Streamlit-AWS.git
+git clone https://github.com/PasinduGunathilake/https://github.com/PasinduGunathilake/Srilankan-Leagal-Assistant-GenAI-RAG-Chatbot-Using-LangChain-Python-Pinecone-AWS
 cd "Law RAG Chatbot"
 ```
 
@@ -640,5 +640,3 @@ This project is for **educational and research purposes**.
 Legal documents used must be sourced from official Sri Lankan government publications.
 
 ---
-
-*Built with ❤️ using LangChain, Pinecone, Ollama, and Flask.*
