@@ -5,7 +5,7 @@ from src.helper import download_embeddings
 Embeddings = download_embeddings()
 
 # vector index name
-index_name = "law-rag-genai-chatbot"
+index_name = "leagal-rag-ai-chatbot"
 
 # load data from vectorstore
 def load_vectorstore_index():

@@ -29,7 +29,20 @@ LEGAL_PATTERNS = [
 ]
 
 def input_guardrail(query: str) ->bool:
-    """
+   
+    # convert query to lowercase
+    query_lower = query.lower()
+
+    # check
+    for pattern in LEGAL_PATTERNS:
+
+        #if pattern found in query, return it is as related query
+        if re.search(pattern, query_lower):
+            return True
+    
+    return False
+
+"""
     INPUT-LEVEL GUARDRAIL FUNCTION
 
     Purpose:
@@ -47,16 +60,4 @@ def input_guardrail(query: str) ->bool:
     2. Checks if any legal pattern exists in the query.
     3. If at least one pattern matches → return True.
     4. If no pattern matches → return False.
-    """
-    # convert query to lowercase
-    query_lower = query.lower()
-
-    # check
-    for pattern in LEGAL_PATTERNS:
-
-        #if pattern found in query, return it is as related query
-        if re.search(pattern, query_lower):
-            return True
-    
-    return False
-
+"""

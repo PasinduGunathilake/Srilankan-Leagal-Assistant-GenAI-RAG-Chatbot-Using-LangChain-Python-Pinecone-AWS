@@ -24,7 +24,7 @@ pinecone_api_key = os.getenv("PINECONE_API_KEY")
 pc = Pinecone(api_key=pinecone_api_key)
 
 # db indexing
-index_name = "law-rag-genai-chatbot"
+index_name = "leagal-rag-ai-chatbot"
 
 if not pc.has_index(index_name):
     pc.create_index(
