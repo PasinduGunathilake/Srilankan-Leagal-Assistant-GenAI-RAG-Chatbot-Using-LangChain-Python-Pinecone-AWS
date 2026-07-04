@@ -20,7 +20,7 @@ def load_vectorstore_index():
 def get_retriever(k: int=5):
     doc_search= load_vectorstore_index()
     Retriever = doc_search.as_retriever(
-        search_type="similarity",
+        search_type="similarity",  # which means retrieve data base on cosine similarity
         search_kwargs={"k":k}
     )
     return Retriever
