@@ -1,4 +1,5 @@
 from flask import Flask, render_template, jsonify, request
+from functools import lru_cache
 from src.prompt import *
 from src.Guardrails import input_guardrail, REFUSAL_MESSAGE
 from src.retriever import get_retriever 
@@ -21,7 +22,11 @@ if not os.getenv("LANGCHAIN_API_KEY"):
 if os.getenv("LANGCHAIN_TRACING_V2") != "true":
     raise RuntimeError("LANGCHAIN_TRACING_V2 not set to 'true'!")
 
-Retriever=get_retriever()
+# Cache the retriever to prevent reconnection issues on each request/reload
+@lru_cache(maxsize=1)
+def get_cached_retriever():
+    return get_retriever()
+
 
 # Brain(model)
 
@@ -58,7 +63,7 @@ prompt = ChatPromptTemplate.from_messages(
 
 #chains
 QnA_chain = create_stuff_documents_chain(llm=LLM, prompt=prompt)
-RAG_chain = create_retrieval_chain(Retriever, QnA_chain)
+RAG_chain = create_retrieval_chain(get_cached_retriever(), QnA_chain)
 
 
 # default route

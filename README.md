@@ -9,6 +9,7 @@
   <img src="https://img.shields.io/badge/Ollama-gemma3%3A1b-orange?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Flask-3.1.1-red?style=for-the-badge&logo=flask"/>
   <img src="https://img.shields.io/badge/License-Educational-lightgrey?style=for-the-badge"/>
+  ![Version](https://img.shields.io/badge/Version-0.0.1-E10600?style=for-the-badge)
 </p>
 
 ---
@@ -625,6 +626,9 @@ Contributions are welcome! Please follow these steps:
 - 🧪 **Test suite** — unit tests for `helper.py` and `Guardrails.py`
 
 ---
+
+## Versioning
+This project uses [Semantic Versioning](https://semver.org/). For the versions available, see the [tags on this repository](https://github.com/PasinduGunathilake/https://github.com/PasinduGunathilake/Srilankan-Leagal-Assistant-GenAI-RAG-Chatbot-Using-LangChain-Python-Pinecone-AWS/tags) or the [CHANGELOG.md](CHANGELOG.md) file.
 
 ## 👤 Author
 

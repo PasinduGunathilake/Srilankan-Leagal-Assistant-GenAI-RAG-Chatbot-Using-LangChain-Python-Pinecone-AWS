@@ -1,5 +1,5 @@
 import re
-
+from langsmith import traceable
 
 # Normal refusal
 REFUSAL_MESSAGE=(
@@ -28,21 +28,14 @@ LEGAL_PATTERNS = [
     r"\btribunal\b"          # Matches the word "tribunal"
 ]
 
+# for optimized fastest way- Compile pattern outside the function for performance
+COMBINED_PATTERN = re.compile('|'.join(LEGAL_PATTERNS), re.IGNORECASE)
+
+@traceable
 def input_guardrail(query: str) ->bool:
-   
-    # convert query to lowercase
-    query_lower = query.lower()
-
-    # check
-    for pattern in LEGAL_PATTERNS:
-
-        #if pattern found in query, return it is as related query
-        if re.search(pattern, query_lower):
-            return True
     
-    return False
 
-"""
+    """
     INPUT-LEVEL GUARDRAIL FUNCTION
 
     Purpose:
@@ -60,4 +53,23 @@ def input_guardrail(query: str) ->bool:
     2. Checks if any legal pattern exists in the query.
     3. If at least one pattern matches → return True.
     4. If no pattern matches → return False.
-"""
+    """
+   
+    # looped case- this maybe slow
+    """
+    # convert query to lowercase
+    query_lower = query.lower()
+
+    # check
+    for pattern in LEGAL_PATTERNS:
+
+        #if pattern found in query, return it is as related query
+        if re.search(pattern, query_lower):
+            return True
+    
+    return False
+    """
+    # fastest way/ regex way
+    return bool(COMBINED_PATTERN.search(query))
+
+    
