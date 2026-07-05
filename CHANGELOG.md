@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0] - 2026-07-06
+### Added
+- *Multimodal Fallback:* Integrated a fail-safe mechanism (Ollama + Gemini) to ensure system reliability.
+- *Modular Architecture:* Fully refactored the codebase into distinct modules (rag_chain.py, llm.py, etc.) for better maintainability.
+- *Safety Features:* Enhanced input-level guardrails to ensure safe and relevant responses.
+
+### Changed
+- *Codebase Refactoring:* Reorganized the project structure for improved scalability and clean code standards.
+- *Resource Management:* Implemented lazy-loading for LLM initialization to prevent connection errors and optimize memory usage.
+- *Configuration:* Improved dependency management and environment variable handling.
+
+
+
+
+## [0.0.1] - 2026-03-02/ 2026-07-04
+### Added
+- Intergrated input level guardrails for user queries to ensure safe and relevant responses.
+- Updated the Guarlrail.py file to optimize the guardrail logic and improve performance.
+
+
+
+
 ## [0.0.0] - 2025-12-27
 ### Added
 - Initial project setup and architecture.
@@ -13,7 +35,3 @@ All notable changes to this project will be documented in this file.
 - Enhanced with UI and chat functionlities.
 - **Langsmith** integrated for Monitoring.
 
-## [0.0.1] - 2026-03-02/ 2026-07-04
-### Added
-- Intergrated input level guardrails for user queries to ensure safe and relevant responses.
-- Updated the Guarlrail.py file to optimize the guardrail logic and improve performance.

@@ -7,7 +7,7 @@ REFUSAL_MESSAGE=(
     "This response is generated strictly based on the supplied statutory material."
 )
 
-
+# REGEX guardrail
 # input level rule-based guardrail
 # List of regular expression patterns that indicate a legal-related question
 # These patterns help detect whether the user's query is about Sri Lankan law

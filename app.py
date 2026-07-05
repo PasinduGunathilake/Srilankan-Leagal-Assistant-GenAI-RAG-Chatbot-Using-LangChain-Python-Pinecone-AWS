@@ -1,7 +1,9 @@
 from flask import Flask, render_template, jsonify, request
+from src.Guardrails import input_guardrail, REFUSAL_MESSAGE
+from src.rag_chain import get_chains
+'''
 from functools import lru_cache
 from src.prompt import *
-from src.Guardrails import input_guardrail, REFUSAL_MESSAGE
 from src.retriever import get_retriever 
 from langchain_ollama import ChatOllama # this for locally installed deployment
 from langchain.chains import create_retrieval_chain
@@ -9,11 +11,12 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.prompts import SystemMessagePromptTemplate, HumanMessagePromptTemplate, ChatPromptTemplate
 from dotenv import load_dotenv
 import os
+'''
 
 
 # flask app initialize
 app = Flask(__name__)
-
+"""
 load_dotenv()
 
 if not os.getenv("LANGCHAIN_API_KEY"):
@@ -64,7 +67,8 @@ prompt = ChatPromptTemplate.from_messages(
 #chains
 QnA_chain = create_stuff_documents_chain(llm=LLM, prompt=prompt)
 RAG_chain = create_retrieval_chain(get_cached_retriever(), QnA_chain)
-
+"""
+system_chain = get_chains()
 
 # default route
 @app.route("/")
@@ -83,7 +87,7 @@ def chat():
         print("Blocked by input guardrail")
         return REFUSAL_MESSAGE
     
-    response = RAG_chain.invoke({"input":input})
+    response = system_chain.invoke({"input":input})
     print(f"response: {response['answer']}")
     return str(response['answer'])
 
