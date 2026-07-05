@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/License-Educational-lightgrey?style=for-the-badge"/>
 </p>
 
-![Version](https://img.shields.io/badge/Version-0.0.1-E10600?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-1.0.0-E10600?style=for-the-badge)
 
 ---
 
@@ -29,7 +29,7 @@
 - [Data Ingestion — One-Time Setup](#-data-ingestion--one-time-setup)
 - [Running the Application](#-running-the-application)
 - [API Reference](#-api-reference)
-- [Switching LLM Backends](#-switching-llm-backends)
+- [Automated LLM Failover](#-automated-llm-failover)
 - [LangSmith Observability](#-langsmith-observability)
 - [Troubleshooting](#-troubleshooting)
 - [Contributing](#-contributing)
@@ -40,25 +40,28 @@
 
 ## 🧠 Overview
 
-The **Sri Lankan Legal AI Assistant** is a domain-specific legal chatbot that answers questions **exclusively** from the content of Sri Lankan legal PDF documents. It will never hallucinate or use general world knowledge — it either finds the answer in the indexed statutes or says it cannot.
+The **Sri Lankan Legal AI Assistant** is a domain-specific legal chatbot that answers questions **exclusively** from the content of Sri Lankan legal PDF documents. Leveraging **advanced AI engineering techniques**, the system implements robust **input-level guardrails** for domain safety and a **multimodal fail-safe fallback architecture** to ensure high availability. It will never hallucinate or use general world knowledge — it either finds the answer in the indexed statutes or says it cannot.
+---
 
-### Core Principles
+### 🛡️ Core Principles
 
 | Principle | Implementation |
 |-----------|---------------|
-| **Grounded answers only** | LLM is forbidden from using external knowledge via system prompt |
-| **Citation-first responses** | Every answer must reference the Act name, section, or page |
-| **Domain safety** | Input guardrail blocks non-legal queries before touching the LLM |
-| **Privacy by default** | Runs entirely locally with Ollama (no data leaves your machine) |
+| **Grounded answers only** | LLM is restricted to the provided context via system prompt |
+| **Citation-first** | Every response must reference the specific Act, section, or page |
+| **Advanced Safety** | Input-level `Guardrails.py` filters non-legal queries |
+| **High Availability** | `Multimodel_fallback` ensures seamless switch from Ollama to Gemini |
 
-### How it works at a high level
+---
+
+### 🚀 How it works at a high level
 
 | Step | What happens |
 |------|-------------|
 | **Ingest** | PDFs are loaded, noise-filtered, chunked, and embedded into Pinecone (run once) |
-| **Guard** | Every incoming query passes a regex-based legal topic filter |
-| **Retrieve** | The top 5 most semantically similar document chunks are fetched from Pinecone |
-| **Generate** | A local LLM (Ollama `gemma3:1b`) is prompted with the chunks as context |
+| **Guard** | Every query passes through `Guardrails.py` to ensure domain relevance |
+| **Retrieve** | Top 5 semantically similar chunks are fetched from Pinecone via `rag_chain.py` |
+| **Generate** | Context-augmented prompt is sent to `gemma3:1b` (Ollama) or Gemini (Fallback) |
 | **Respond** | A cited, formal legal answer is returned to the user's browser |
 
 ---
@@ -67,33 +70,33 @@ The **Sri Lankan Legal AI Assistant** is a domain-specific legal chatbot that an
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        USER BROWSER                                  │
-│                  http://localhost:8080                                │
+│                          USER BROWSER                               │
+│                     http://localhost:8080                           │
 └────────────────────────────┬────────────────────────────────────────┘
                              │ POST /get  { msg: "..." }
                              ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         FLASK APP  (app.py)                          │
-│                                                                      │
-│  ┌───────────────────┐    ┌────────────────────────────────────────┐ │
-│  │  Input Guardrail  │-NO→│   REFUSAL_MESSAGE (no LLM call)        │ │
-│  │  (Guardrails.py)  │    └────────────────────────────────────────┘ │
-│  └────────┬──────────┘                                               │
-│           │ YES — legal query detected                               │
-│           ▼                                                          │
-│  ┌─────────────────────────────────────────────────────────────────┐ │
-│  │                  RAG Chain (LangChain)                           │ │
-│  │                                                                  │ │
-│  │  Query → [Pinecone Retriever] → top-5 chunks                    │ │
-│  │            ↓                                                     │ │
-│  │  [ChatPromptTemplate] ← system_prompt_text + {context} + {input}│ │
-│  │            ↓                                                     │ │
-│  │  [Ollama gemma3:1b] → answer                                    │ │
-│  └─────────────────────────────────────────────────────────────────┘ │
+│                        FLASK APP  (app.py)                          │
+│                                                                     │
+│  ┌───────────────────┐    ┌────────────────────────────────────────┐│
+│  │  Input Guardrail  │-NO→│  REFUSAL_MESSAGE (no LLM call)         ││
+│  │  (Guardrails.py)  │    └────────────────────────────────────────┘│
+│  └────────┬──────────┘                                              │
+│           │ YES — legal query detected                              │
+│           ▼                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐│
+│  │  RAG Chain (LangChain)                                          ││
+│  │                                                                 ││
+│  │  Query → [Cached Pinecone Retriever] → top-5 chunks             ││
+│  │              ↓                                                  ││
+│  │  [ChatPromptTemplate] ← system_prompt + {context} + {input}     ││
+│  │              ↓                                                  ││
+│  │  [Multimodal Fallback] → Ollama (Primary) OR Gemini (Backup)    ││
+│  └─────────────────────────────────────────────────────────────────┘│
 └─────────────────────────────────────────────────────────────────────┘
                              │
                              ▼
-                    JSON text response → Browser
+                     JSON text response → Browser
 ```
 
 The diagram above shows the complete request/response lifecycle:
@@ -157,9 +160,12 @@ Law RAG Chatbot/
 ├── src/                    # 🧩 Core application modules
 │   ├── __init__.py
 │   ├── helper.py           # PDF loading, filtering, chunking, embeddings
+│   ├── llm.py              # 🧠 LLM factory and lazy-loading logic
+│   ├── Multimodel_fallback_model.py # 🔄 Fail-safe mechanism (Ollama/Gemini)
+│   ├── Guardrails.py       # 🛡️ Input-level topic safety filter
 │   ├── prompt.py           # LLM system prompt template
 │   ├── retriever.py        # Pinecone retriever factory
-│   └── Guardrails.py       # Input-level topic safety filter
+│   └── rag_chain.py        # 🔗 Core RAG orchestration and caching
 │
 ├── templates/
 │   └── index.html          # 💬 Chat web UI (Jinja2 template)
@@ -169,15 +175,13 @@ Law RAG Chatbot/
 └── research/               # 🔬 Jupyter notebooks (optional experiments)
 ```
 
----
-
 ## 🛠️ Tech Stack
 
 | Layer | Technology | Role |
 |-------|-----------|------|
 | **Web Server** | Flask 3.1.1 | Serves UI and REST API |
-| **LLM — Default** | Ollama `gemma3:1b` | Local, free, private inference |
-| **LLM — Alternatives** | OpenRouter / Google Gemini | Cloud-based inference options |
+| **LLM1 with fail-safe mechanism** | Ollama `gemma3:1b` | Local, free, private inference |
+| **LLM2 with fail-safe mechanism** | Google Gemini | Cloud-based inference options |
 | **Orchestration** | LangChain 0.3.26 | Chains, retrievers, prompts |
 | **Embeddings** | `all-MiniLM-L6-v2` (HuggingFace) | 384-dim semantic text vectors |
 | **Vector Store** | Pinecone Serverless (AWS us-east-1) | Similarity search over legal chunks |
@@ -199,6 +203,7 @@ Before installing, make sure you have the following:
 | **Pinecone Account** | Free tier | [pinecone.io](https://pinecone.io) |
 | **LangSmith Account** | Free tier | [smith.langchain.com](https://smith.langchain.com) |
 | **Git** | Any | For cloning the repo |
+| **Google API Key** | Free | [ai.google.dev](https://ai.google.dev/gemini-api/docs/api-key) |
 
 ### Install and Configure Ollama
 
@@ -220,7 +225,7 @@ ollama list
 
 ```bash
 git clone https://github.com/PasinduGunathilake/https://github.com/PasinduGunathilake/Srilankan-Leagal-Assistant-GenAI-RAG-Chatbot-Using-LangChain-Python-Pinecone-AWS
-cd "Law RAG Chatbot"
+
 ```
 
 ### Step 2 — Create a Virtual Environment
@@ -252,11 +257,12 @@ This installs the complete dependency set:
 | `langchain-openai` | 0.3.24 | OpenAI / OpenRouter integration |
 | `langchain-pinecone` | 0.2.8 | Pinecone vector store integration |
 | `flask` | 3.1.1 | Web server and REST API |
-| `flask-cores` | — | CORS support for Flask |
+| `flask-cors` | 5.0.0 | CORS support for Flask |
 | `sentence-transformers` | 4.1.0 | HuggingFace embedding model runner |
 | `pypdf` | 5.6.1 | PDF page extraction |
 | `python-dotenv` | 1.0.0 | Loads `.env` variables at runtime |
 | `ipykernel` | 7.1.0 | Jupyter support (optional) |
+| `langchain_google_genai` | 2.0.10 | Gemini LLM integration |
 | `-e .` | — | Editable install of this project via `setup.py` |
 
 ---
@@ -276,14 +282,14 @@ LANGCHAIN_API_KEY="your-langsmith-api-key-here"
 LANGCHAIN_TRACING_V2="true"
 LANGCHAIN_TRACING_PROJECT_NAME="law_rag_genai_assistant"
 
-# ─── Cloud LLM Alternatives (optional) ──────────────────
-# OPENROUTER_API_KEY="your-openrouter-key-here"
+# ─── Cloud LLM Alternatives (Muti-model fallback system) ──────────────────
 # GOOGLE_API_KEY="your-google-ai-key-here"
 ```
 
 > **Where to get your keys:**
 > - 🔑 **Pinecone** → [app.pinecone.io](https://app.pinecone.io) → API Keys
 > - 🔑 **LangSmith** → [smith.langchain.com](https://smith.langchain.com) → Settings → API Keys
+> - 🔑 **Google Gemini** → [aistudio.google.com](https://aistudio.google.com) → Get API key
 
 > ⚠️ **Never commit your `.env` file to Git.** It is already in `.gitignore`.
 
@@ -305,6 +311,8 @@ load_pdf() → doc_filter() → text_split() → download_embeddings()
 | `doc_filter(docs)` | Removes noise pages — table of contents, gazette notices, price tags — using `NOISE_PATTERNS`. Keeps only pages matching `LEGAL_PATTERNS` (e.g., *"Act No."*, *"section 5"*) or at least 4 `WEAK_LEGAL_SIGNALS` (e.g., *"shall"*, *"court"*, *"minister"*) |
 | `text_split(doc_list)` | Splits filtered documents into overlapping chunks using `RecursiveCharacterTextSplitter` — **800 character chunks** with **100 character overlap** — to preserve sentence context across boundaries |
 | `download_embeddings()` | Loads `sentence-transformers/all-MiniLM-L6-v2` from HuggingFace — a fast, lightweight model that produces **384-dimensional** semantic vectors |
+
+
 
 #### Document Filtering Logic
 
@@ -369,6 +377,23 @@ Connects to the pre-populated Pinecone index and returns a LangChain-compatible 
 |----------|-------------|
 | `load_vectorstore_index()` | Opens the `leagal-rag-ai-chatbot` index using the same embedding model used during ingestion |
 | `get_retriever(k=5)` | Returns a similarity-search retriever that fetches the **top 5** most semantically relevant chunks for a given query |
+
+---
+
+*in v1.0.0 Updated*
+### `src/Multimodel_fallback_model.py` 
+ Provides a *fail-safe mechanism*. If the primary local LLM (Ollama) fails to connect or respond, this module automatically redirects the request to a secondary cloud-based LLM (e.g., Google Gemini), ensuring system reliability.
+
+---
+*in v1.0.0 Updated*
+### `src/llm.py` 
+Contains factory functions for LLM initialization. Implements lazy-loading to ensure models are only initialized when needed, preventing connection errors at startup.
+
+---
+
+*in v1.0.0 Updated*
+### `src/rag_chain.py` 
+ The core orchestration module that links the LLM, prompt templates, and the Pinecone retriever. It utilizes @lru_cache to cache the Pinecone retriever instance, preventing redundant network reconnections and improving request latency. It dynamically integrates the Multimodel_fallback() mechanism, ensuring that if the local Ollama LLM fails to respond, the system seamlessly switches to a cloud-based backup (such as Google Gemini) to maintain continuous service.
 
 ---
 
@@ -528,53 +553,26 @@ curl -X POST http://localhost:8080/get \
 
 ---
 
-## �🔀 Switching LLM Backends
+*(from v1.0.0)*
+### 🔄 Automated LLM Failover
+The system is designed with a robust **Multimodal Fallback** mechanism. This ensures high availability by automatically switching between models if the primary service is unavailable.
 
-The default is Ollama (local, free). Two cloud alternatives are already prepared in `app.py` as comments — just uncomment and configure:
+| Model Tier | Provider | Role | Status |
+|------------|----------|------|--------|
+| **Primary** | Ollama | Local Inference (Privacy) | Default |
+| **Secondary** | Google Gemini | Cloud Failover | Active |
 
-### Option A — OpenRouter (Free Cloud Tier)
+#### How the Fallover Works:
+1.  **Primary Attempt:** The system first attempts to connect to the local Ollama instance (e.g., `gemma3:1b`).
+2.  **Health Check:** If the connection times out or the local server is down, the system immediately catches the exception.
+3.  **Seamless Switch:** It automatically switches to the secondary provider (Google Gemini) to ensure your request is answered without interruption.
 
-```python
-from langchain_openai import ChatOpenAI
+#### Configure Your Fallback:
+To enable the cloud fallback, ensure your `.env` file is configured:
 
-LLM = ChatOpenAI(
-    model="google/gemini-2.5-flash:free",
-    openai_api_key=os.getenv("OPENROUTER_API_KEY"),
-    openai_api_base="https://openrouter.ai/api/v1",
-    temperature=0.1
-)
-```
-
-Add to `.env`: `OPENROUTER_API_KEY="your-key"`
-
-### Option B — Google Gemini (Cloud)
-
-```python
-from langchain_google_genai import ChatGoogleGenerativeAI
-
-LLM = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
-    google_api_key=os.getenv("GOOGLE_API_KEY"),
-    temperature=0.1,
-    max_retries=2
-)
-```
-
-Add to `.env`: `GOOGLE_API_KEY="your-key"`
-
-Install the extra package:
 ```bash
-pip install langchain-google-genai
-```
-
-| | Ollama | OpenRouter | Google Gemini |
-|-|--------|-----------|----|
-| **Cost** | Free | Free tier | Pay-per-token |
-| **Privacy** | ✅ Fully local | ❌ Cloud | ❌ Cloud |
-| **Speed** | Depends on hardware | Fast | Fast |
-| **Setup** | Requires local GPU/CPU | API key only | API key only |
-
----
+# Required for Cloud Fallback
+GOOGLE_API_KEY="your-google-api-key"
 
 ## 📊 LangSmith Observability
 
@@ -596,6 +594,7 @@ Every chain invocation is traced to **LangSmith**, giving you full visibility in
 |---------|-------------|-----|
 | `RuntimeError: LANGCHAIN_API_KEY NotFound!` | Key missing from `.env` | Add your LangSmith API key |
 | `RuntimeError: PINECONE_API_KEY NotFound!` | Key missing from `.env` | Add your Pinecone API key |
+| `RuntimeError: GOOGLE_API_KEY NotFound!` | Key missing from `.env` | Add your Google API key |
 | `ConnectionError` to Ollama | Ollama daemon not running | Run `ollama serve` in a terminal |
 | `model not found` | Model not pulled | Run `ollama pull gemma3:1b` |
 | Empty / irrelevant answers | Pinecone index not populated | Run `python vectorstore.py` first |

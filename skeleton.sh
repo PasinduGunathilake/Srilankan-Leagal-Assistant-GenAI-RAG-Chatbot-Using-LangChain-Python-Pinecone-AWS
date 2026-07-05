@@ -6,6 +6,9 @@ touch src/__init__.py
 touch src/helper.py
 touch src/prompt.py
 touch src/retriever.py
+touch src/llm.py #(v1.0.0)
+touch src/Multimodal_fallback.py #(v1.0.0)
+touch src/rag_chain.py #(v1.0.0)
 touch .env
 touch setup.py
 touch vectorstore.py
