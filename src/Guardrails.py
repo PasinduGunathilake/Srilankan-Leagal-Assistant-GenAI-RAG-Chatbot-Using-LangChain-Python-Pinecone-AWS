@@ -1,11 +1,14 @@
 import re
 from langsmith import traceable
+from src.Multimodel_fallback_model import Multimodel_fallback
 
+'''
 # Normal refusal
 REFUSAL_MESSAGE=(
     "The query cannot be awared as it is not supported by the provided leagal context. "
     "This response is generated strictly based on the supplied statutory material."
 )
+'''
 
 # REGEX guardrail
 # input level rule-based guardrail
@@ -31,8 +34,11 @@ LEGAL_PATTERNS = [
 # for optimized fastest way- Compile pattern outside the function for performance
 COMBINED_PATTERN = re.compile('|'.join(LEGAL_PATTERNS), re.IGNORECASE)
 
+
+# REGEX guardrail (up to v0.0.1)
+
 @traceable
-def input_guardrail(query: str) ->bool:
+def input_regex_guardrail(query: str) ->bool:
     
 
     """
@@ -71,5 +77,32 @@ def input_guardrail(query: str) ->bool:
     """
     # fastest way/ regex way
     return bool(COMBINED_PATTERN.search(query))
+
+
+
+
+
+
+# LLM Based (Multimodel feedback model) Guardrail (Upto v1.0.1)
+
+def input_Multimodel_fallback_model_guardrail(query: str) -> bool:
+    g_llm = Multimodel_fallback()
+
+    guardrail_prompt = f"""Classify if this query relates to Sri Lankan law (Acts, IP law, 
+                            GI registration, contracts, criminal law, rights, procedures, etc.)
+
+                            Examples:
+                            Query: "What is the punishment for theft under the Penal Code?" -> Yes
+                            Query: "What are the requirements for GI registration under the IP Act?" -> Yes
+                            Query: "What is bipolar disorder?" -> No
+                            Query: "How to cook rice?" -> No
+
+                            Query: "{query}" """
+    
+    g_response = g_llm.invoke(guardrail_prompt)
+
+    if 'no' in g_response.content.lower():
+        return False
+    return True
 
     

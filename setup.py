@@ -3,19 +3,24 @@ from setuptools import find_packages, setup
 # metadata
 setup(
     name="sri-lankan-legal-ai-assistant",
-    version="1.0.0", 
+    version="1.1.0", 
     author="Pasindu Gunathilake",
     author_email="pasindugunathilake144@gmail.com",
     packages=find_packages(),
     install_requires=[
         "flask",
         "langchain",
+        "langchain-core",
         "langchain-ollama",
         "langchain-google-genai",
         "langchain-community",
+        "langchain-pinecone",
         "python-dotenv",
+        "pypdf",
         "httpx",
         "pinecone-client",
         "langsmith"
     ]
 )
+
+#pip install -e .

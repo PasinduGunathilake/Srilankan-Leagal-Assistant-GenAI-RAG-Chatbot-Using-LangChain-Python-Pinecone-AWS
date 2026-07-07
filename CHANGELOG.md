@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-07-08
+### Added
+- **JSON API Integration:** Refactored backend communication to use JSON for robust and scalable data exchange.
+- **Enhanced Error Handling:** Implemented proper HTTP status codes (200, 400, 500) for better frontend-backend synchronization.
+- **Professional User Feedback:** Standardized response messages for system-blocked queries.
+- **Code Optimization:** Cleaned up redundant logic and removed unreachable code in `app.py`.
+- **Comprehensive Documentation:** Added professional comments throughout the codebase for maintainability.
+
+### Changed
+- **Advanced Guardrail Implementation:** Migrated from basic Regex-based guardrails to a more robust Multimodal Fallback model approach (adder in previous version - again used same in this) for smarter, context-aware input filtering.
+
+
+
 ## [1.0.0] - 2026-07-06
 ### Added
 - *Multimodal Fallback:* Integrated a fail-safe mechanism (Ollama + Gemini) to ensure system reliability.

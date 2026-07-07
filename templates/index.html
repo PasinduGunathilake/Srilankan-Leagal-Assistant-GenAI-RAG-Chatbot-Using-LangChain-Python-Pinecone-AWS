@@ -57,7 +57,7 @@
                     ⚖️ <span class="text-gray-100">AI Legal Assistant</span>
                 </div>
                 <p class="text-[13px] text-gray-100 font-mono uppercase tracking-[0.2em]">
-                    Engineered with <span class="text-yellow-600 font-bold">Multi-model Fallback Model <br>v1.0.0</span>
+                    Engineered with <span class="text-yellow-600 font-bold">Multi-model Fallback Model <br>v1.1.0</span>
                 </p>
             </div>
             <div class="w-9 h-9 bg-yellow-600 rounded-full border border-gray-600 flex items-center justify-center text-black font-bold shadow-lg shadow-yellow-600/20">
@@ -138,12 +138,12 @@
         async function startChat() {
             const userMessage = input.value.trim();
             if (userMessage !== "") {
-                // UI Switch: Hero to Chat
+                // Switch UI from Hero screen to Chat screen
                 container.classList.remove("justify-center");
                 greeting.classList.add("hidden");
                 messages.classList.remove("hidden");
                 
-                // 1. Add User Message
+                // 1. Render the user's message in the chat window
                 const userDiv = document.createElement("div");
                 userDiv.className = "flex justify-end mb-4";
                 userDiv.innerHTML = `
@@ -154,44 +154,59 @@
                 messages.appendChild(userDiv);
                 input.value = ""; 
 
-                // 2. Add AI Loading State
+                // 2. Render the AI loading state while waiting for the response
                 const loadingDiv = document.createElement("div");
                 loadingDiv.id = "temp-loading";
                 loadingDiv.className = "flex gap-4 items-start mb-4 animate-pulse";
                 loadingDiv.innerHTML = `
                     <div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-[10px]">AI</div>
-                    <div class="bg-[#1e1f20] rounded-2xl px-4 py-3 text-gray-100  text-xs tracking-wider loading-dots">Retrieving legal precedents</div>
+                    <div class="bg-[#1e1f20] rounded-2xl px-4 py-3 text-gray-100 text-xs tracking-wider loading-dots">Retrieving legal precedents</div>
                 `;
                 messages.appendChild(loadingDiv);
                 messages.scrollTop = messages.scrollHeight;
 
                 try {
-                    const formData = new FormData();
-                    formData.append("msg", userMessage);
+                    // Send the user message to the backend API as JSON
+                    const response = await fetch("/get", {
+                        method: "POST",
+                        headers: { 
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ msg: userMessage })
+                    });
 
-                    const response = await fetch("/get", { method: "POST", body: formData });
-                    const answer = await response.text();
-                    
+                    // Parse the JSON response from the server
+                    const data = await response.json();
+
+                    // Remove the temporary loading indicator
                     document.getElementById("temp-loading").remove();
 
-                    // 3. Add AI Response (Parsed with Marked.js)
+                    // 3. Render the AI response using Marked.js for Markdown formatting
                     const aiDiv = document.createElement("div");
                     aiDiv.className = "flex gap-4 items-start mb-6";
+                    
+                    // Fallback message if the answer is undefined
+                    const displayAnswer = data.answer || "I apologize, I could not retrieve a response.";
+
                     aiDiv.innerHTML = `
                         <div class="w-8 h-8 rounded-full bg-yellow-600 flex items-center justify-center text-black font-bold shrink-0">⚖️</div>
                         <div class="prose bg-[#1e1f20] border border-gray-800 rounded-2xl px-5 py-4 max-w-[90%] shadow-lg">
-                            ${marked.parse(answer)}
+                            ${marked.parse(displayAnswer)}
                         </div>
                     `;
                     messages.appendChild(aiDiv);
                     messages.scrollTop = messages.scrollHeight;
 
                 } catch (error) {
+                    // Handle network errors or system timeouts
                     console.error("Error:", error);
-                    document.getElementById("temp-loading").innerHTML = "System timeout: Check connection.";
+                    const loading = document.getElementById("temp-loading");
+                    if (loading) {
+                        loading.innerHTML = "System timeout: Please check your connection.";
+                    }
                 }
             }
-        }
+        }       
 
         input.addEventListener("keypress", (e) => { if (e.key === "Enter") startChat(); });
     </script>

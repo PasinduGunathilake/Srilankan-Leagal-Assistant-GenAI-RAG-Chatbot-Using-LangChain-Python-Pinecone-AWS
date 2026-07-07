@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/License-Educational-lightgrey?style=for-the-badge"/>
 </p>
 
-![Version](https://img.shields.io/badge/Version-1.0.0-E10600?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-1.1.0-E10600?style=for-the-badge)
 
 ---
 
@@ -59,7 +59,7 @@ The **Sri Lankan Legal AI Assistant** is a domain-specific legal chatbot that an
 | Step | What happens |
 |------|-------------|
 | **Ingest** | PDFs are loaded, noise-filtered, chunked, and embedded into Pinecone (run once) |
-| **Guard** | Every query passes through `Guardrails.py` to ensure domain relevance |
+| **Guard** | Every query passes through `Guardrails.py` (AI-powered filtering) to ensure domain relevance |
 | **Retrieve** | Top 5 semantically similar chunks are fetched from Pinecone via `rag_chain.py` |
 | **Generate** | Context-augmented prompt is sent to `gemma3:1b` (Ollama) or Gemini (Fallback) |
 | **Respond** | A cited, formal legal answer is returned to the user's browser |
@@ -526,13 +526,13 @@ Serves the chat web interface.
 
 ### `POST /get`
 
-Accepts a user message and returns an AI-generated legal answer.
+Accepts a user message in JSON format and returns an AI-generated legal answer.
 
-**Request (form-encoded):**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `msg` | `string` | The user's question |
+**Request (JSON):**
+```json
+{
+  "msg": "What are the penalties under the Penal Code section 302?"
+}
 
 **Example (curl):**
 
@@ -543,19 +543,29 @@ curl -X POST http://localhost:8080/get \
 
 **Response:**
 
-| Status | Condition | Body |
-|--------|-----------|------|
-| `200 OK` | Legal query — answer found | Plain text answer with citations |
-| `200 OK` | Legal query — no context found | *"The query cannot be answered..."* |
-| `200 OK` | Non-legal query blocked by guardrail | `REFUSAL_MESSAGE` string |
+{
+  "status": "success",
+  "answer": "The penalties under Section 302 are..."
+}
+
+
+| Status Code | Description |
+|-------------|-------------|
+| 200 | Success or Blocked (Guardrail) |
+| 400 | Bad Request (Empty message) |
+| 500 | Internal Server Error (System failure)|
 
 > **Note:** The API always returns `200`. Error conditions are communicated as plain-text strings in the body, not HTTP error codes.
 
 ---
 
-*(from v1.0.0)*
-### 🔄 Automated LLM Failover
-The system is designed with a robust **Multimodal Fallback** mechanism. This ensures high availability by automatically switching between models if the primary service is unavailable.
+
+### 🔄 Automated LLM Failover & System Reliability
+The system now features a robust **Multimodal Fallback** mechanism and **Professional Error Handling**:
+- **Fail-safe mechanism:** Automatically switches between local (Ollama) and cloud (Gemini) models to ensure continuous availability.
+- **Robust API communication:** Frontend and Backend now communicate via **JSON**, ensuring structured data exchange.
+- **HTTP Status Codes:** The system provides meaningful HTTP status codes (200, 400, 500) to ensure the frontend can gracefully handle errors and provide user feedback.
+
 
 | Model Tier | Provider | Role | Status |
 |------------|----------|------|--------|
