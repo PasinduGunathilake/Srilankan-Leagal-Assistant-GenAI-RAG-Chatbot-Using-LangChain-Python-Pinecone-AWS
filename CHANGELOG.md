@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1] - 2026-07-08
+### Fixed
+- Resolved dependency conflict between `pinecone-client` and `pinecone`.
+- Updated `requirements.txt` to include compatible dependency versions.
+
+
 ## [1.1.0] - 2026-07-08
 ### Added
 - **JSON API Integration:** Refactored backend communication to use JSON for robust and scalable data exchange.

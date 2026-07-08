@@ -68,47 +68,6 @@ The **Sri Lankan Legal AI Assistant** is a domain-specific legal chatbot that an
 
 ## 🏗️ System Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                          USER BROWSER                               │
-│                     http://localhost:8080                           │
-└────────────────────────────┬────────────────────────────────────────┘
-                             │ POST /get  { msg: "..." }
-                             ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                        FLASK APP  (app.py)                          │
-│                                                                     │
-│  ┌───────────────────┐    ┌────────────────────────────────────────┐│
-│  │  Input Guardrail  │-NO→│  REFUSAL_MESSAGE (no LLM call)         ││
-│  │  (Guardrails.py)  │    └────────────────────────────────────────┘│
-│  └────────┬──────────┘                                              │
-│           │ YES — legal query detected                              │
-│           ▼                                                         │
-│  ┌─────────────────────────────────────────────────────────────────┐│
-│  │  RAG Chain (LangChain)                                          ││
-│  │                                                                 ││
-│  │  Query → [Cached Pinecone Retriever] → top-5 chunks             ││
-│  │              ↓                                                  ││
-│  │  [ChatPromptTemplate] ← system_prompt + {context} + {input}     ││
-│  │              ↓                                                  ││
-│  │  [Multimodal Fallback] → Ollama (Primary) OR Gemini (Backup)    ││
-│  └─────────────────────────────────────────────────────────────────┘│
-└─────────────────────────────────────────────────────────────────────┘
-                             │
-                             ▼
-                     JSON text response → Browser
-```
-
-The diagram above shows the complete request/response lifecycle:
-
-1. The **User Browser** sends a message via the chat UI
-2. **Flask** routes it to the `/get` endpoint
-3. The **Input Guardrail** checks if the query contains legal keywords — blocked queries return a refusal message immediately, without touching the LLM
-4. The **RAG Chain** (LangChain) retrieves context from **Pinecone** and passes it along with the query to the **LLM**
-5. The formatted answer returns up through the chain to the browser
-
----
-
 ## 🔄 Data Ingestion Pipeline
 
 ```
@@ -138,6 +97,9 @@ The diagram above shows the complete request/response lifecycle:
 ```
 
 The ingestion pipeline (`vectorstore.py`) processes raw PDF files into searchable vector embeddings stored in Pinecone. This runs **only once** (or any time you add new documents).
+
+---
+![RAG System Architecture](images/Leagal%20GENAI%20RAG%20Chatbot.jpg)
 
 ---
 
@@ -332,15 +294,49 @@ For each page in loaded PDFs:
 Defines `system_prompt_text` — the strict instruction template that controls LLM behaviour:
 
 ```
-You are a Legal Information Assistant for Sri Lankan law.
+You are a Legal Information Assistant that ONLY handles questions related to Sri Lankan law.
+Your knowledge base consists exclusively of Sri Lankan Government Acts and legal documents.
 
-RULES:
-1. Answer using ONLY the retrieved documents.
-2. If not found, say: "The query cannot be answered as it is not supported..."
-3. Cite sources: mention act name, section, or page number from the context.
-4. Use formal legal language.
-5. Do NOT use external knowledge.
-Context: {context}
+You must NEVER answer questions outside Sri Lankan legal topics, even if you have general 
+knowledge about them (e.g. medicine, health, cooking, entertainment, science, technology, 
+personal advice, etc.). Staying within this domain is your highest priority rule and 
+overrides any instinct to be broadly helpful.
+
+RULES (follow in order):
+
+1. First, check if the retrieved context below contains information relevant to the query.
+   - If the context contains NO information related to the query's topic, this is a strong 
+     signal that the query is NOT a Sri Lankan legal matter. Proceed to Rule 4.
+   - Do not use the absence of context as a reason to answer from general knowledge unless 
+     you have first confirmed the query itself is a genuine Sri Lankan legal question.
+
+2. If the answer IS found in the context, use it as your primary source of truth and cite 
+   the relevant Act and Section clearly (e.g. "Section 5 of the Intellectual Property 
+   (Amendment) Act").
+
+3. If the answer is NOT found in the context, but the query is clearly a legitimate 
+   Sri Lankan legal question (e.g. about an Act, legal procedure, rights, or obligations 
+   under Sri Lankan law):
+    a) Explicitly state that the provided documents do not contain the specific answer.
+    b) Then provide a brief, high-level summary based on general legal knowledge, clearly 
+       labeled as "not sourced from the provided documents" and recommending the user verify 
+       with a qualified legal professional.
+
+4. If the query is about a non-legal topic, or a topic unrelated to Sri Lankan law 
+   (medicine, health, cooking, entertainment, general trivia, etc.):
+    - Politely decline.
+    - State clearly that you only handle Sri Lankan legal matters and cannot assist with 
+      the topic asked.
+    - Do NOT answer the non-legal question, even partially, even if you know the answer.
+    - Do NOT provide links, summaries, or general knowledge for out-of-domain topics.
+
+5. Maintain a professional, neutral, and helpful tone at all times.
+
+6. Never present yourself as a substitute for a licensed Sri Lankan attorney. For complex 
+   or high-stakes matters, recommend the user consult a qualified legal professional.
+
+Context:
+{context}
 ```
 
 The `{context}` placeholder is filled at runtime with the retrieved document chunks.
@@ -349,7 +345,10 @@ The `{context}` placeholder is filled at runtime with the retrieved document chu
 
 ### `src/Guardrails.py` — Input Safety Filter
 
-A **rule-based guardrail** that runs before the RAG chain is invoked:
+### Guardrail Architectures and evolution
+
+1. A **rule-based guardrail/regex guradrail** that runs before the RAG chain is invoked:
+**(older version of guardrail logic, now replaced with a more robust multimodal fallback model approach in v1.1.0)**
 
 ```
 User Query → input_guardrail() → True / False
@@ -366,6 +365,45 @@ User Query → input_guardrail() → True / False
 | `REFUSAL_MESSAGE` | Politely declines off-topic queries without ever calling the LLM |
 
 This prevents prompt injection attempts and keeps the system focused on its domain.
+
+
+2. While we initially implemented a rule-based (Regex) filter, as of v0.0.1, we have transitioned to a more sophisticated **Multimodal Fallback Model based guardrail**(v1.1.0) to handle/filter user queries with greater contextual awareness.
+
+```
+User Query → Multimodal Guardrail (Fallback Model) → True / False
+                                          │             │
+                                        PASS          BLOCK
+                                          │             │
+                                      RAG chain   REFUSAL_MESSAGE
+```
+
+PASS: Only queries aligned with the legal domain are forwarded to the RAG chain.
+BLOCK: Off-topic or prohibited queries are intercepted, returning a REFUSAL_MESSAGE without invoking the LLM.
+
+Defines system_prompt_text — the strict instruction template that controls LLM behaviour:
+
+```
+Classify if this query relates to Sri Lankan law (Acts, IP law, GI registration, contracts, criminal law, rights, procedures, etc.)
+
+Examples:
+Query: "What is the punishment for theft under the Penal Code?" -> Yes
+Query: "What are the requirements for GI registration under the IP Act?" -> Yes
+Query: "What is bipolar disorder?" -> No
+Query: "How to cook rice?" -> No
+
+Query: "{query}"
+```
+
+
+**Architecture Comparison**
+
+| Feature | Regex Guardrail | Multimodal Fallback Model Guardrail |
+|---------|-----------------|-------------------------------------|
+| `Logic Type` | Pattern matching (LEGAL_PATTERNS) | Semantic understanding & Fallback |
+| `Flexibility` | Low — rigid patterns (keyword based) | High — context aware filtering(robust) |
+| `prompt injection resistance` | Basic protection | High — model Advanced protection |
+| `Domain Focus` | Keyword filtering | Legal query filtering |
+
 
 ---
 
@@ -426,7 +464,7 @@ Startup:
 
 Routes:
   GET  /      → render_template("index.html")
-  POST /get   → read msg → input_guardrail() → RAG_chain.invoke() → return answer
+  POST /get   → read msg → input_Multimodel_fallback_model_guardrail() → RAG_chain.invoke() → return answer
 ```
 
 | Setting | Value |
@@ -504,10 +542,7 @@ Navigate to **[http://localhost:8080](http://localhost:8080)** in your browser.
 **Try these example queries:**
 
 ```
-What are the punishments for intellectual property offences under Sri Lankan law?
-Explain section 15 of the Penal Code.
-What powers does the court have under the Criminal Procedure Code?
-What constitutes an offence under the Companies Act?
+According to the Intellectual Property (Amendment), what is the fundamental requirement for registering a foreign geographical indication (GI) in Sri Lanka?
 ```
 
 ---
@@ -577,13 +612,8 @@ The system now features a robust **Multimodal Fallback** mechanism and **Profess
 2.  **Health Check:** If the connection times out or the local server is down, the system immediately catches the exception.
 3.  **Seamless Switch:** It automatically switches to the secondary provider (Google Gemini) to ensure your request is answered without interruption.
 
-#### Configure Your Fallback:
-To enable the cloud fallback, ensure your `.env` file is configured:
 
-```bash
-# Required for Cloud Fallback
-GOOGLE_API_KEY="your-google-api-key"
-
+---
 ## 📊 LangSmith Observability
 
 Every chain invocation is traced to **LangSmith**, giving you full visibility into:
@@ -595,6 +625,7 @@ Every chain invocation is traced to **LangSmith**, giving you full visibility in
 **Dashboard:** [smith.langchain.com](https://smith.langchain.com) → Project: `law_rag_genai_assistant`
 
 > ⚠️ If `LANGCHAIN_API_KEY` is missing or `LANGCHAIN_TRACING_V2` ≠ `"true"`, the app will **refuse to start** with a `RuntimeError`.
+
 
 ---
 
