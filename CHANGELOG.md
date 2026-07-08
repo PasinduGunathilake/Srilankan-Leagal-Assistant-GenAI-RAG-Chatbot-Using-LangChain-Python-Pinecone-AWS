@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - Resolved dependency conflict between `pinecone-client` and `pinecone`.
 - Updated `requirements.txt` to include compatible dependency versions.
+- update some codelines
 
 
 ## [1.1.0] - 2026-07-08
