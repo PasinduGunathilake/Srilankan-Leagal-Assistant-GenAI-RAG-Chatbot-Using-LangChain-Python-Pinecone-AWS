@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/License-Educational-lightgrey?style=for-the-badge"/>
 </p>
 
-![Version](https://img.shields.io/badge/Version-1.1.0-E10600?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-1.1.1-E10600?style=for-the-badge)
 
 ---
 
