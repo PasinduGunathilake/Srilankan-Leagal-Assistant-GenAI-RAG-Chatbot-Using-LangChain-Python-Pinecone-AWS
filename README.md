@@ -9,6 +9,9 @@
   <img src="https://img.shields.io/badge/Ollama-gemma3%3A1b-orange?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Flask-3.1.1-red?style=for-the-badge&logo=flask"/>
   <img src="https://img.shields.io/badge/License-Educational-lightgrey?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Docker-Enabled-blue?style=for-the-badge&logo=docker"/>
+  <img src="https://img.shields.io/badge/Render-Deployment-green?style=for-the-badge&logo=render"/>
+  <img src="https://img.shields.io/badge/Gemini-API-blue?style=for-the-badge&logo=google-gemini"/>
 </p>
 
 ![Version](https://img.shields.io/badge/Version-1.1.2-E10600?style=for-the-badge)
