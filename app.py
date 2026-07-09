@@ -2,6 +2,8 @@ from flask import Flask, render_template, jsonify, request
 #from src.Guardrails import input_regex_guardrail
 from src.Guardrails import input_Multimodel_fallback_model_guardrail
 from src.rag_chain import get_chains
+import os
+from dotenv import load_dotenv
 
 
 # flask app initialize
@@ -64,7 +66,9 @@ def chat():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080, debug=True)
+    port = int(os.environ.get("PORT", 8080))
+    debug_mode = os.environ.get("DEBUG", "False").lower() == "true"
+    app.run(host="0.0.0.0", port=port, debug=debug_mode)
 
 '''
 question = "what punishments of intellectual property law in sri lanka?"

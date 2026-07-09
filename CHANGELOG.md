@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.2] - 2026-07-09
+### Added
+- **Cloud Deployment Optimization:** Configured `app.py` for dynamic port binding and secure production mode using environment variables.
+- **Infrastructure:** Created `entrypoint.sh` to handle automated service initialization (Ollama + Flask) within the Docker container.
+- **Documentation:** Updated `README.md` and `CHANGELOG.md` to reflect the latest project status and cloud-ready architecture.
+
+### Changed
+- **Deployment Strategy:** Optimized Dockerfile structure for production deployment on Render.com.
+
+
 ## [1.1.1] - 2026-07-08
 ### Fixed
 - Resolved dependency conflict between `pinecone-client` and `pinecone`.

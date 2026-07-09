@@ -1,6 +1,6 @@
 # ⚖️ Sri Lankan Legal AI Assistant
 
-> A **Retrieval-Augmented Generation (RAG)** chatbot built with **LangChain · Pinecone · Ollama · Flask** — answers legal questions strictly grounded in Sri Lankan statutory documents.
+ A **Retrieval-Augmented Generation (RAG)** chatbot built with **LangChain · Pinecone · Ollama · Flask**  answers legal questions strictly grounded in Sri Lankan statutory documents.
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python&logoColor=white"/>
@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/License-Educational-lightgrey?style=for-the-badge"/>
 </p>
 
-![Version](https://img.shields.io/badge/Version-1.1.1-E10600?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-1.1.2-E10600?style=for-the-badge)
 
 ---
 
@@ -25,6 +25,7 @@
 - [Prerequisites](#-prerequisites)
 - [Installation](#-installation)
 - [Configuration](#-configuration)
+- [Deployment & Dockerization](#-deployment-&-dockerization)
 - [How Each Module Works](#-how-each-module-works)
 - [Data Ingestion — One-Time Setup](#-data-ingestion--one-time-setup)
 - [Running the Application](#-running-the-application)
@@ -100,7 +101,6 @@ The ingestion pipeline (`vectorstore.py`) processes raw PDF files into searchabl
 
 ---
 ![RAG System Architecture](images/Leagal%20GENAI%20RAG%20Chatbot.jpg)
-
 ---
 
 ## 📁 Project Structure
@@ -136,6 +136,7 @@ Law RAG Chatbot/
 │
 └── research/               # 🔬 Jupyter notebooks (optional experiments)
 ```
+---
 
 ## 🛠️ Tech Stack
 
@@ -254,6 +255,32 @@ LANGCHAIN_TRACING_PROJECT_NAME="law_rag_genai_assistant"
 > - 🔑 **Google Gemini** → [aistudio.google.com](https://aistudio.google.com) → Get API key
 
 > ⚠️ **Never commit your `.env` file to Git.** It is already in `.gitignore`.
+
+---
+
+## 🐳 Deployment & Dockerization
+
+This project is fully containerized and ready for production.
+
+1. Docker Setup (Local)
+
+```bash
+# Build the image
+docker build -t law-rag-chatbot .
+
+# Run the container
+docker run -p 8080:8080 -e PORT=8080 law-rag-chatbot
+
+```
+
+2. Cloud Deployment (Render.com)
+Connect Repository: Link your GitHub repo to Render.
+
+Settings: Runtime: Docker, Branch: main.
+
+Environment Variables: Add keys from .env (PINECONE_API_KEY, etc).
+
+Initialization: Render automatically runs entrypoint.sh to initialize Ollama.
 
 ---
 
