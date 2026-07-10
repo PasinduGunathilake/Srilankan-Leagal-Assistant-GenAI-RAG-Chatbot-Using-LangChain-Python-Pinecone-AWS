@@ -14,7 +14,9 @@ else:
 
 # LLMs
 def get_ollama_llm():
-    return ChatOllama(model="gemma3:1b", temperature=0.1)
+
+    ollama_url = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434")
+    return ChatOllama(model="gemma3:1b", temperature=0.1, base_url = ollama_url)
 
 def get_gemini_llm():
     api_key = os.getenv("GOOGLE_API_KEY")

@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama_data:/root/.ollama
+
+  web:
+    build: .
+    container_name: leagal-rag-genai-assistant
+    ports:
+      - "8080:8080"
+    env_file: 
+      - .env
+    depends_on:
+      - ollama

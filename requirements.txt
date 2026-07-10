@@ -11,4 +11,5 @@ langchain-community==0.3.26
 langchain-ollama==0.2.1
 langchain_google_genai==2.0.10
 ipykernel==7.1.0
+gunicorn==21.2.0
 -e .

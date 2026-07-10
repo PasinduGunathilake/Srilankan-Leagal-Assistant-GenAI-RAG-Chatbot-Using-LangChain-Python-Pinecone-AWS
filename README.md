@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/Gemini-API-blue?style=for-the-badge&logo=google-gemini"/>
 </p>
 
-![Version](https://img.shields.io/badge/Version-1.1.2-E10600?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-1.1.3-E10600?style=for-the-badge)
 
 ---
 
@@ -28,7 +28,6 @@
 - [Prerequisites](#-prerequisites)
 - [Installation](#-installation)
 - [Configuration](#-configuration)
-- [Deployment & Dockerization](#-deployment-&-dockerization)
 - [How Each Module Works](#-how-each-module-works)
 - [Data Ingestion — One-Time Setup](#-data-ingestion--one-time-setup)
 - [Running the Application](#-running-the-application)
@@ -36,6 +35,7 @@
 - [Automated LLM Failover](#-automated-llm-failover)
 - [LangSmith Observability](#-langsmith-observability)
 - [Troubleshooting](#-troubleshooting)
+- [Deployment & Dockerization](#-deployment-&-dockerization)
 - [Contributing](#-contributing)
 - [Author](#-author)
 - [License](#-license)
@@ -111,33 +111,40 @@ The ingestion pipeline (`vectorstore.py`) processes raw PDF files into searchabl
 ```
 Law RAG Chatbot/
 │
-├── app.py                  # 🚀 Flask server — main entry point
-├── vectorstore.py          # 📦 One-time ingestion: PDFs → Pinecone
+├── app.py                  # 🚀 Flask server — main entry point (Application Logic)
+├── vectorstore.py          # 📦 One-time ingestion: PDFs → Pinecone (Indexing)
 ├── requirements.txt        # 📋 Python dependencies
-├── setup.py                # ⚙️  Package metadata (editable install)
-├── .env                    # 🔑 API keys and environment variables (not committed)
-├── .gitignore
-├── skeleton.sh             # 🗂️  Shell script for project scaffolding
+├── setup.py                # ⚙️  Package metadata and installation script
+├── .env                    # 🔑 API keys and environment variables (Secret - Not committed)
+├── .gitignore              # 🚫 Files and directories to be ignored by Git
+├── skeleton.sh             # 🏗️  Shell script for project environment scaffolding
 │
-├── data/                   # 📄 Place Sri Lankan law PDF files here
+├── data/                   # 📄 Directory for Sri Lankan law PDF files
 │   └── *.pdf
 │
 ├── src/                    # 🧩 Core application modules
 │   ├── __init__.py
-│   ├── helper.py           # PDF loading, filtering, chunking, embeddings
+│   ├── helper.py           # PDF loading, filtering, chunking, and embeddings
 │   ├── llm.py              # 🧠 LLM factory and lazy-loading logic
 │   ├── Multimodel_fallback_model.py # 🔄 Fail-safe mechanism (Ollama/Gemini)
-│   ├── Guardrails.py       # 🛡️ Input-level topic safety filter
-│   ├── prompt.py           # LLM system prompt template
-│   ├── retriever.py        # Pinecone retriever factory
-│   └── rag_chain.py        # 🔗 Core RAG orchestration and caching
+│   ├── Guardrails.py       # 🛡️ Input-level topic safety and security filters
+│   ├── prompt.py           # 📝 LLM system prompt templates
+│   ├── retriever.py        # 🔍 Pinecone/Vector DB retriever factory
+│   └── rag_chain.py        # 🔗 Core RAG orchestration, caching, and flow
 │
 ├── templates/
-│   └── index.html          # 💬 Chat web UI (Jinja2 template)
+│   └── index.html          # 💬 Web Interface
 │
-├── static/                 # 🎨 CSS / JS / image assets
+├── images/                 # 🎨 Project assets and visualization images
 │
-└── research/               # 🔬 Jupyter notebooks (optional experiments)
+├── research/               # 🔬 Jupyter notebooks for experiments and validation
+│
+├── CHANGELOG.md            # 📜 Version history and project update log
+├── README.md               # 📖 Project documentation, setup guide, and features
+├── .env                    # 🔑 (Config template)
+├── docker-compose.yml      # 🐳 Multi-container orchestration (App + Ollama)
+├── Dockerfile              # 📦 Container image definition and build recipe
+└── LICENCE                 # ⚖️  Software licensing information (MIT)
 ```
 ---
 
@@ -229,6 +236,7 @@ This installs the complete dependency set:
 | `python-dotenv` | 1.0.0 | Loads `.env` variables at runtime |
 | `ipykernel` | 7.1.0 | Jupyter support (optional) |
 | `langchain_google_genai` | 2.0.10 | Gemini LLM integration |
+| `gunicorn | 21.2.0 | Production WSGI server for Flask |
 | `-e .` | — | Editable install of this project via `setup.py` |
 
 ---
@@ -240,16 +248,25 @@ This installs the complete dependency set:
 Create or edit the `.env` file in the project root with your actual API keys:
 
 ```env
-# ─── Pinecone (required) ────────────────────────────────
+# ─── Pinecone Configuration ────────────────────────────────
+# API key for Pinecone vector database access
 PINECONE_API_KEY="your-pinecone-api-key-here"
 
-# ─── LangSmith Tracing (required) ───────────────────────
+# ─── LangSmith Tracing ─────────────────────────────────────
+# API key and configuration for LangSmith experiment tracking
 LANGCHAIN_API_KEY="your-langsmith-api-key-here"
 LANGCHAIN_TRACING_V2="true"
-LANGCHAIN_TRACING_PROJECT_NAME="law_rag_genai_assistant"
+LANGCHAIN_TRACING_PROJECT_NAME="legal_rag_genai_assistant"
 
-# ─── Cloud LLM Alternatives (Muti-model fallback system) ──────────────────
+# ─── Cloud LLM Alternatives (Multi-model fallback) ─────────
+# API key for Google Gemini (Fallback provider)
 # GOOGLE_API_KEY="your-google-ai-key-here"
+
+# ─── Ollama Configuration ──────────────────────────────────
+# Ollama service URL: 
+# Use 'http://localhost:11434' for local development
+# Use 'http://ollama:11434' when running inside Docker containers
+OLLAMA_BASE_URL="http://ollama:11434"
 ```
 
 > **Where to get your keys:**
@@ -261,31 +278,6 @@ LANGCHAIN_TRACING_PROJECT_NAME="law_rag_genai_assistant"
 
 ---
 
-## 🐳 Deployment & Dockerization
-
-This project is fully containerized and ready for production.
-
-1. Docker Setup (Local)
-
-```bash
-# Build the image
-docker build -t law-rag-chatbot .
-
-# Run the container
-docker run -p 8080:8080 -e PORT=8080 law-rag-chatbot
-
-```
-
-2. Cloud Deployment (Render.com)
-Connect Repository: Link your GitHub repo to Render.
-
-Settings: Runtime: Docker, Branch: main.
-
-Environment Variables: Add keys from .env (PINECONE_API_KEY, etc).
-
-Initialization: Render automatically runs entrypoint.sh to initialize Ollama.
-
----
 
 ## 🧩 How Each Module Works
 
@@ -673,6 +665,35 @@ Every chain invocation is traced to **LangSmith**, giving you full visibility in
 | Slow first response (~30s) | Embedding model downloading | `all-MiniLM-L6-v2` (~90 MB) downloads once; subsequent starts are fast |
 | `ModuleNotFoundError: src` | Package not installed | Ensure you ran `pip install -r requirements.txt` (includes `-e .`) |
 | Pinecone index not found | Index name typo in `retriever.py` | Confirm index name is `leagal-rag-ai-chatbot` (matches `vectorstore.py`) |
+
+---
+
+## 🐳 Deployment & Dockerization
+
+This project is fully containerized using Docker Compose, allowing for seamless deployment in both local development and production environments.
+
+1. Local Development / Production Setup
+
+To start the entire system (Application + Ollama), use the following command in the project root:
+
+```bash
+# Build and start services in detached mode
+docker-compose up --build -d
+```
+To verify that both containers are running, use
+
+```bash
+docker ps
+```
+To stop and remove the containers:
+
+```bash
+docker-compose down
+```
+
+2. Initializing the AI Model
+
+Since the model (gemma3:1b) is pulled into the Ollama container, you need to run this command once after the containers are up:
 
 ---
 

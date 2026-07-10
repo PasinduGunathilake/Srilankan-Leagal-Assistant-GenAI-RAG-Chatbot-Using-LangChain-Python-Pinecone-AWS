@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.3] - 2026-07-10
+### Added
+- **Docker Compose Orchestration:** Migrated to a robust multi-container architecture (Web App + Ollama) for local and server deployment.
+- **Persistent Storage:** Configured Docker volumes to ensure persistent data storage for AI models.
+- **Environment Configuration:** Added `OLLAMA_BASE_URL` to `.env` to support seamless switching between local and containerized environments.
+
+### Changed
+- **Deployment Strategy:** Removed `entrypoint.sh` in favor of a cleaner Docker Compose startup process.
+- **Infrastructure:** Updated `Dockerfile` and `docker-compose.yml` for production-grade reliability.
+
+
+
 ## [1.1.2] - 2026-07-09
 ### Added
 - **Cloud Deployment Optimization:** Configured `app.py` for dynamic port binding and secure production mode using environment variables.

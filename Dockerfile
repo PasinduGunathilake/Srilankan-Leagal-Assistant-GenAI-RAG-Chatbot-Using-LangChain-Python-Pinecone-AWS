@@ -4,6 +4,4 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-RUN chmod +x entrypoint.sh
-EXPOSE 7860
-CMD ["./entrypoint.sh"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"]
