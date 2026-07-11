@@ -1,8 +1,8 @@
 from langchain_pinecone import PineconeVectorStore
-from src.helper import download_embeddings 
+from src.embeddings import get_downloaded_embeddings 
 
 # initialize embeddings
-Embeddings = download_embeddings()
+Embeddings = get_downloaded_embeddings()
 
 # vector index name
 index_name = "leagal-rag-ai-chatbot"

@@ -12,6 +12,7 @@ touch src/llm.py #(v1.0.0)
 touch src/Multimodal_fallback.py #(v1.0.0)
 touch src/rag_chain.py #(v1.0.0)
 touch src/Guardrails.py #(v1.1.0)
+touch src/embeddings.py #(v1.1.4)
 touch .env
 touch setup.py
 touch vectorstore.py

@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 # metadata
 setup(
     name="sri-lankan-legal-ai-assistant",
-    version="1.1.3", 
+    version="1.1.4", 
     author="Pasindu Gunathilake",
     author_email="pasindugunathilake144@gmail.com",
     packages=find_packages(),

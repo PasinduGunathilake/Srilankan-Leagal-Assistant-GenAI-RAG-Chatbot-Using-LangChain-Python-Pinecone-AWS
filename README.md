@@ -10,11 +10,10 @@
   <img src="https://img.shields.io/badge/Flask-3.1.1-red?style=for-the-badge&logo=flask"/>
   <img src="https://img.shields.io/badge/License-Educational-lightgrey?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Docker-Enabled-blue?style=for-the-badge&logo=docker"/>
-  <img src="https://img.shields.io/badge/Render-Deployment-green?style=for-the-badge&logo=render"/>
   <img src="https://img.shields.io/badge/Gemini-API-blue?style=for-the-badge&logo=google-gemini"/>
 </p>
 
-![Version](https://img.shields.io/badge/Version-1.1.3-E10600?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-1.1.4-E10600?style=for-the-badge)
 
 ---
 
@@ -124,13 +123,14 @@ Law RAG Chatbot/
 │
 ├── src/                    # 🧩 Core application modules
 │   ├── __init__.py
-│   ├── helper.py           # PDF loading, filtering, chunking, and embeddings
-│   ├── llm.py              # 🧠 LLM factory and lazy-loading logic
-│   ├── Multimodel_fallback_model.py # 🔄 Fail-safe mechanism (Ollama/Gemini)
-│   ├── Guardrails.py       # 🛡️ Input-level topic safety and security filters
-│   ├── prompt.py           # 📝 LLM system prompt templates
-│   ├── retriever.py        # 🔍 Pinecone/Vector DB retriever factory
-│   └── rag_chain.py        # 🔗 Core RAG orchestration, caching, and flow
+|   ├── retriever.py                    # 🔍 Pinecone/Vector DB retriever factory
+│   ├── embeddings.py                   #    Embeddings
+│   ├── llm.py                          # 🧠 LLM factory and lazy-loading logic
+│   ├── Multimodel_fallback_model.py    # 🔄 Fail-safe mechanism (Ollama/Gemini)
+│   ├── Guardrails.py                   # 🛡️ Input-level topic safety and security filters
+│   ├── prompt.py                       # 📝 LLM system prompt templates
+│   ├── retriever.py                    # 🔍 Pinecone/Vector DB retriever factory
+│   └── rag_chain.py                    # 🔗 Core RAG orchestration, caching, and flow
 │
 ├── templates/
 │   └── index.html          # 💬 Web Interface
@@ -435,25 +435,30 @@ Connects to the pre-populated Pinecone index and returns a LangChain-compatible 
 
 | Function | What it does |
 |----------|-------------|
-| `load_vectorstore_index()` | Opens the `leagal-rag-ai-chatbot` index using the same embedding model used during ingestion |
+| `load_vectorstore_index()` | Opens the `legal-rag-ai-chatbot` index using the same embedding model used during ingestion |
 | `get_retriever(k=5)` | Returns a similarity-search retriever that fetches the **top 5** most semantically relevant chunks for a given query |
+
+---
+*in v1.1.4 Updated - Optimized for memory efficiency (load as globle variable)*
+### 'src/embeddings.py`
+  Provides a singleton pattern for the embedding model. This ensures a single, globally managed instance of the model is shared across the application, effectively preventing redundant memory allocation and eliminating duplicate model initialization overhead.
 
 ---
 
 *in v1.0.0 Updated*
 ### `src/Multimodel_fallback_model.py` 
- Provides a *fail-safe mechanism*. If the primary local LLM (Ollama) fails to connect or respond, this module automatically redirects the request to a secondary cloud-based LLM (e.g., Google Gemini), ensuring system reliability.
+  Provides a *fail-safe mechanism*. If the primary local LLM (Ollama) fails to connect or respond, this module automatically redirects the request to a secondary cloud-based LLM (e.g., Google Gemini), ensuring system reliability.
 
 ---
 *in v1.0.0 Updated*
 ### `src/llm.py` 
-Contains factory functions for LLM initialization. Implements lazy-loading to ensure models are only initialized when needed, preventing connection errors at startup.
+  Contains factory functions for LLM initialization. Implements lazy-loading to ensure models are only initialized when needed, preventing connection errors at startup.
 
 ---
 
 *in v1.0.0 Updated*
 ### `src/rag_chain.py` 
- The core orchestration module that links the LLM, prompt templates, and the Pinecone retriever. It utilizes @lru_cache to cache the Pinecone retriever instance, preventing redundant network reconnections and improving request latency. It dynamically integrates the Multimodel_fallback() mechanism, ensuring that if the local Ollama LLM fails to respond, the system seamlessly switches to a cloud-based backup (such as Google Gemini) to maintain continuous service.
+  The core orchestration module that links the LLM, prompt templates, and the Pinecone retriever. It utilizes @lru_cache to cache the Pinecone retriever instance, preventing redundant network reconnections and improving request latency. It dynamically integrates the Multimodel_fallback() mechanism, ensuring that if the local Ollama LLM fails to respond, the system seamlessly switches to a cloud-based backup (such as Google Gemini) to maintain continuous service.
 
 ---
 

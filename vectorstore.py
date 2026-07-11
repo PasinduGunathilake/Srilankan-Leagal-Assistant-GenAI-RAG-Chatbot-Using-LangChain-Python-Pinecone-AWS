@@ -1,5 +1,6 @@
 #for store vectors in vector database. run only ones
-from src.helper import load_pdf, doc_filter, text_split, download_embeddings
+from src.helper import load_pdf, doc_filter, text_split
+from src.embeddings import get_downloaded_embeddings
 from pinecone import Pinecone
 from pinecone import ServerlessSpec
 from langchain_pinecone import PineconeVectorStore
@@ -17,7 +18,7 @@ filtered_data = doc_filter(loaded_data)
 chunked_data = text_split(filtered_data)
 
 # initialize embeddings
-Embeddings = download_embeddings()
+Embeddings = get_downloaded_embeddings()
 
 # vector db initialize
 pinecone_api_key = os.getenv("PINECONE_API_KEY")

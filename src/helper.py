@@ -3,7 +3,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from typing import List
 from langchain.schema import Document
 import re
-from langchain.embeddings import HuggingFaceEmbeddings
+
 
 # Extract pdfs
 def load_pdf(path):
@@ -99,8 +99,13 @@ def text_split(doc_list):
     return splitted_text
 
 
-# embedding model
+# For increase efficient memory usage (memory optimization) this model save as global variable in src/embeddings.py 
+'''
+# embedding model download
 def download_embeddings():
     model = "sentence-transformers/all-MiniLM-L6-v2"
     embeddings = HuggingFaceEmbeddings(model_name= model)
     return embeddings
+'''
+
+

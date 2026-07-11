@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.4] - 2026-07-11
+### Added
+- **Singleton Pattern Implementation**: Introduced lazy-loading for embedding models to ensure they are initialized only once across the application lifecycle.
+
+- **Modular Refactoring**: Separated embedding logic into dedicated modules (src/embeddings.py) to improve code maintainability.
+
+ ### Changed
+- **Resource Management**: Optimized RAM and VRAM usage by implementing global instance management for AI models, preventing redundant model loading across retriever.py and vectorstore.py.
+
+- **Architectural Cleanup**: Refactored utility functions and model initialization, adhering to clean architecture principles for the Legal AI Assistant.
+
+
 ## [1.1.3] - 2026-07-10
 ### Added
 - **Docker Compose Orchestration:** Migrated to a robust multi-container architecture (Web App + Ollama) for local and server deployment.

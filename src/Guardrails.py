@@ -82,6 +82,7 @@ def input_regex_guardrail(query: str) ->bool:
 
 
 
+# New Improved Guardrail
 
 # LLM Based (Multimodel feedback model) Guardrail (Upto v1.0.1)
 
