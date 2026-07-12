@@ -89,20 +89,26 @@ def input_regex_guardrail(query: str) ->bool:
 def input_Multimodel_fallback_model_guardrail(query: str) -> bool:
     g_llm = Multimodel_fallback()
 
-    guardrail_prompt = f"""Classify if this query relates to Sri Lankan law (Acts, IP law, 
-                            GI registration, contracts, criminal law, rights, procedures, etc.)
+    guardrail_prompt = (f"""
+        Classify if this query relates to Sri Lankan law (Acts, IP law, 
+        GI registration, contracts, criminal law, rights, procedures, etc.)
 
-                            Examples:
-                            Query: "What is the punishment for theft under the Penal Code?" -> Yes
-                            Query: "What are the requirements for GI registration under the IP Act?" -> Yes
-                            Query: "What is bipolar disorder?" -> No
-                            Query: "How to cook rice?" -> No
-
-                            Query: "{query}" """
+        Examples:
+        Query: "What is the punishment for theft under the Penal Code?" -> Yes
+        Query: "What are the requirements for GI registration under the IP Act?" -> Yes
+        Query: "What is bipolar disorder?" -> No
+        Query: "How to cook rice?" -> No
+        
+        Query: {query}
+        Decision:"""
+    )
     
     g_response = g_llm.invoke(guardrail_prompt)
+    print(g_response)
+    decision = g_response.content.strip().lower()
+    print(decision)
 
-    if 'no' in g_response.content.lower():
+    if 'no' in decision:
         return False
     return True
 

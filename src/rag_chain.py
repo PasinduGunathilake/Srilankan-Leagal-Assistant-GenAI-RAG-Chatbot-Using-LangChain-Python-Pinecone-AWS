@@ -1,5 +1,5 @@
 from src.prompt import *
-from src.retriever import get_retriever 
+from src.retriever import get_retriever, get_reranked_retriever 
 from src.Multimodel_fallback_model import Multimodel_fallback
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
@@ -23,7 +23,7 @@ def get_cached_retriever():
     return get_retriever()
 
 
-#chains
+#chains/pipeline
 
 def get_chains():
 
@@ -41,9 +41,30 @@ def get_chains():
             human_prompt
         ]
     )
+    '''
+    old method
 
     QnA_chain = create_stuff_documents_chain(llm=LLMs, prompt=prompt)
     RAG_chain = create_retrieval_chain(get_cached_retriever(), QnA_chain)
+    '''
+    QnA_chain = create_stuff_documents_chain(llm=LLMs, prompt=prompt)
+    Retriever = get_cached_retriever()
+
+    # RAG pipeline
+    def RAG_chain(user_query):
+        #retrieve
+        raw_data = Retriever.invoke(user_query)
+        #rerank
+        Retrived_reranked_docs = get_reranked_retriever(input_query=user_query, retrieved_data=raw_data)
+        #context prepare
+        context_docs = [res['content'] for res in Retrived_reranked_docs]
+        #answer
+        response = QnA_chain.invoke({
+            "context": context_docs,
+            "input": user_query
+        })
+
+        return response, context_docs
 
     return RAG_chain
 

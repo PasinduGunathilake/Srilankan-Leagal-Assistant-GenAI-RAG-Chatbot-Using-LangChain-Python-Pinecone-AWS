@@ -7,13 +7,14 @@
   <img src="https://img.shields.io/badge/LangChain-0.3.26-green?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Pinecone-Vector%20DB-purple?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Ollama-gemma3%3A1b-orange?style=for-the-badge"/>
-  <img src="https://img.shields.io/badge/Flask-3.1.1-red?style=for-the-badge&logo=flask"/>
+  <img src="https://img.shields.io/badge/Ollama-gemma3%3A1b-orange?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Hugging%20Face-Model-blue?style=for-the-badge&logo=huggingface"/>
   <img src="https://img.shields.io/badge/License-Educational-lightgrey?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Docker-Enabled-blue?style=for-the-badge&logo=docker"/>
   <img src="https://img.shields.io/badge/Gemini-API-blue?style=for-the-badge&logo=google-gemini"/>
 </p>
 
-![Version](https://img.shields.io/badge/Version-1.1.4-E10600?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-1.2.0-E10600?style=for-the-badge)
 
 ---
 
@@ -43,7 +44,7 @@
 
 ## 🧠 Overview
 
-The **Sri Lankan Legal AI Assistant** is a domain-specific legal chatbot that answers questions **exclusively** from the content of Sri Lankan legal PDF documents. Leveraging **advanced AI engineering techniques**, the system implements robust **input-level guardrails** for domain safety and a **multimodal fail-safe fallback architecture** to ensure high availability. It will never hallucinate or use general world knowledge — it either finds the answer in the indexed statutes or says it cannot.
+The **Sri Lankan Legal AI Assistant** is a domain-specific legal chatbot that answers questions **exclusively** from the content of Sri Lankan legal PDF documents. Leveraging **advanced AI engineering techniques**, the system implements robust **input-level guardrails** for domain safety, **reranking** for better precision and a **multimodal fail-safe fallback architecture** to ensure high availability. It will never hallucinate or use general world knowledge — it either finds the answer in the indexed statutes or says it cannot.
 ---
 
 ### 🛡️ Core Principles
@@ -52,8 +53,14 @@ The **Sri Lankan Legal AI Assistant** is a domain-specific legal chatbot that an
 |-----------|---------------|
 | **Grounded answers only** | LLM is restricted to the provided context via system prompt |
 | **Citation-first** | Every response must reference the specific Act, section, or page |
-| **Advanced Safety** | Input-level `Guardrails.py` filters non-legal queries |
+| **Advanced Safety** | Input-level llm based `Guardrails.py` filters non-legal queries |
 | **High Availability** | `Multimodel_fallback` ensures seamless switch from Ollama to Gemini |
+| **Fail-Safe Architecture** | If Ollama fails, the system automatically reroutes to Gemini (cloud) |
+| **Better Retrival and High Presicion** | Cosine similarity search combined with Cross-Encoder reranking |
+| **Memory Efficiency** | Singleton pattern for embeddings and lazy-loading for LLMs |
+| **Modular Architecture** | Codebase is organized into distinct modules for maintainability |
+| **Observability** | LangSmith traces every chain invocation for debugging and analysis |
+| **Professional UX** | Standardized HTTP status codes and JSON responses for frontend integration |
 
 ---
 
@@ -63,7 +70,7 @@ The **Sri Lankan Legal AI Assistant** is a domain-specific legal chatbot that an
 |------|-------------|
 | **Ingest** | PDFs are loaded, noise-filtered, chunked, and embedded into Pinecone (run once) |
 | **Guard** | Every query passes through `Guardrails.py` (AI-powered filtering) to ensure domain relevance |
-| **Retrieve** | Top 5 semantically similar chunks are fetched from Pinecone via `rag_chain.py` |
+| **Retrieve & rerank** | Top 20 semantically similar chunks are fetched from Pinecone and `reranker.py` (Cross-Encoder) filters and sorts top 3 chunks for high precision |
 | **Generate** | Context-augmented prompt is sent to `gemma3:1b` (Ollama) or Gemini (Fallback) |
 | **Respond** | A cited, formal legal answer is returned to the user's browser |
 
@@ -122,14 +129,14 @@ Law RAG Chatbot/
 │   └── *.pdf
 │
 ├── src/                    # 🧩 Core application modules
-│   ├── __init__.py
+│   ├── __init__.py                     # 🏷️ Package initializer
 |   ├── retriever.py                    # 🔍 Pinecone/Vector DB retriever factory
-│   ├── embeddings.py                   #    Embeddings
+│   ├── embeddings.py                   # 🔠 Embeddings
 │   ├── llm.py                          # 🧠 LLM factory and lazy-loading logic
 │   ├── Multimodel_fallback_model.py    # 🔄 Fail-safe mechanism (Ollama/Gemini)
 │   ├── Guardrails.py                   # 🛡️ Input-level topic safety and security filters
 │   ├── prompt.py                       # 📝 LLM system prompt templates
-│   ├── retriever.py                    # 🔍 Pinecone/Vector DB retriever factory
+│   ├── reranker.py                     # 🎯 Cross-Encoder reranking for precision
 │   └── rag_chain.py                    # 🔗 Core RAG orchestration, caching, and flow
 │
 ├── templates/
@@ -146,6 +153,7 @@ Law RAG Chatbot/
 ├── Dockerfile              # 📦 Container image definition and build recipe
 └── LICENCE                 # ⚖️  Software licensing information (MIT)
 ```
+
 ---
 
 ## 🛠️ Tech Stack
@@ -157,6 +165,7 @@ Law RAG Chatbot/
 | **LLM2 with fail-safe mechanism** | Google Gemini | Cloud-based inference options |
 | **Orchestration** | LangChain 0.3.26 | Chains, retrievers, prompts |
 | **Embeddings** | `all-MiniLM-L6-v2` (HuggingFace) | 384-dim semantic text vectors |
+| **Reranking** | Cross-Encoder `cross-encoder/ms-marco-MiniLM-L6-v2` (HuggingFace) | Precision filtering of retrieved chunks |
 | **Vector Store** | Pinecone Serverless (AWS us-east-1) | Similarity search over legal chunks |
 | **Observability** | LangSmith | Chain tracing and debugging |
 | **PDF Parser** | PyPDF + LangChain DirectoryLoader | Extracts text from statutes |
@@ -177,6 +186,7 @@ Before installing, make sure you have the following:
 | **LangSmith Account** | Free tier | [smith.langchain.com](https://smith.langchain.com) |
 | **Git** | Any | For cloning the repo |
 | **Google API Key** | Free | [ai.google.dev](https://ai.google.dev/gemini-api/docs/api-key) |
+
 
 ### Install and Configure Ollama
 
@@ -231,12 +241,12 @@ This installs the complete dependency set:
 | `langchain-pinecone` | 0.2.8 | Pinecone vector store integration |
 | `flask` | 3.1.1 | Web server and REST API |
 | `flask-cors` | 5.0.0 | CORS support for Flask |
-| `sentence-transformers` | 4.1.0 | HuggingFace embedding model runner |
+| `sentence-transformers` | 4.1.0 | HuggingFace embedding model and rerank model runner |
 | `pypdf` | 5.6.1 | PDF page extraction |
 | `python-dotenv` | 1.0.0 | Loads `.env` variables at runtime |
 | `ipykernel` | 7.1.0 | Jupyter support (optional) |
 | `langchain_google_genai` | 2.0.10 | Gemini LLM integration |
-| `gunicorn | 21.2.0 | Production WSGI server for Flask |
+| `gunicorn` | 21.2.0 | Production WSGI server for Flask |
 | `-e .` | — | Editable install of this project via `setup.py` |
 
 ---
@@ -428,17 +438,26 @@ Query: "{query}"
 
 
 ---
+### `src/reranker.py` - Precision Reranker
+  Utilizes Cross-Encoder technology to filter and prioritize the most accurate results from the retrieved data.
+
+  | Function | What it does |
+  |----------|-------------|
+  | `get_downloaded_reranker()` | Loads and returns the ms-marco-MiniLM-L6-v2 model from cache (memory) for efficient inference. |
+
+---
 
 ### `src/retriever.py` — Pinecone Retriever Factory
-
-Connects to the pre-populated Pinecone index and returns a LangChain-compatible retriever:
+  Connects to the pre-populated Pinecone index and returns a LangChain-compatible retriever:
 
 | Function | What it does |
 |----------|-------------|
 | `load_vectorstore_index()` | Opens the `legal-rag-ai-chatbot` index using the same embedding model used during ingestion |
-| `get_retriever(k=5)` | Returns a similarity-search retriever that fetches the **top 5** most semantically relevant chunks for a given query |
+| `get_retriever(k=20)` | Returns a similarity-search retriever that fetches the **top 20** most semantically relevant chunks for a given query |
+| `get_reranked_retriever(query, docs, top_n=3)` | Processes the 20 retrieved chunks through the Cross-Encoder and returns only the top 3 most precise matches |
 
 ---
+
 *in v1.1.4 Updated - Optimized for memory efficiency (load as globle variable)*
 ### 'src/embeddings.py`
   Provides a singleton pattern for the embedding model. This ensures a single, globally managed instance of the model is shared across the application, effectively preventing redundant memory allocation and eliminating duplicate model initialization overhead.
@@ -450,6 +469,7 @@ Connects to the pre-populated Pinecone index and returns a LangChain-compatible 
   Provides a *fail-safe mechanism*. If the primary local LLM (Ollama) fails to connect or respond, this module automatically redirects the request to a secondary cloud-based LLM (e.g., Google Gemini), ensuring system reliability.
 
 ---
+
 *in v1.0.0 Updated*
 ### `src/llm.py` 
   Contains factory functions for LLM initialization. Implements lazy-loading to ensure models are only initialized when needed, preventing connection errors at startup.
@@ -482,24 +502,8 @@ Step 6: PineconeVectorStore.from_documents() → uploads all chunks
 
 ### `app.py` — Flask Web Server (Main Entry Point)
 
-Wires every component into a running web application:
+Combine every component into a running web application
 
-```
-Startup:
-  load_dotenv() → check API keys → get_retriever() → init ChatOllama LLM
-  → build ChatPromptTemplate → build QnA_chain → build RAG_chain
-
-Routes:
-  GET  /      → render_template("index.html")
-  POST /get   → read msg → input_Multimodel_fallback_model_guardrail() → RAG_chain.invoke() → return answer
-```
-
-| Setting | Value |
-|---------|-------|
-| Host | `0.0.0.0` (all interfaces) |
-| Port | `8080` |
-| LLM | `ChatOllama(model="gemma3:1b", temperature=0.1)` |
-| Retriever | Top-5 cosine similarity from Pinecone |
 
 ---
 
@@ -725,12 +729,13 @@ Contributions are welcome! Please follow these steps:
 ---
 
 ## Versioning
+
 This project uses [Semantic Versioning](https://semver.org/). For the versions available, see the [tags on this repository](https://github.com/PasinduGunathilake/https://github.com/PasinduGunathilake/Srilankan-Leagal-Assistant-GenAI-RAG-Chatbot-Using-LangChain-Python-Pinecone-AWS/tags) or the [CHANGELOG.md](CHANGELOG.md) file.
 
 ## 👤 Author
 
 **Pasindu Gunathilake**
-📧 pasindugunathilake144@gmail.com
+📧 [gmail](pasindugunathilake144@gmail.com)
 🔗 [GitHub](https://github.com/PasinduGunathilake)
 
 ---

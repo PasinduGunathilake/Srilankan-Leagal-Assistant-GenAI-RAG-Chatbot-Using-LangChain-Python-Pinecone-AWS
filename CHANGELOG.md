@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## [1.2.0] - 2026-07-12
+### Added
+- **Precision Reranking**: Integrated reranker.py using Cross-Encoder technology to filter and prioritize the top 3 most accurate chunks from retrieval results.
+- **Enhanced Modular Architecture**: Cleaned up file structure by consolidating core logic and removing redundant retriever definitions.
+
+### Changed
+-**Retrieval Pipeline**: Optimized retriever.py to support reranked retrieval, improving overall system precision.
+
+
+
+
+
 ## [1.1.4] - 2026-07-11
 ### Added
 - **Singleton Pattern Implementation**: Introduced lazy-loading for embedding models to ensure they are initialized only once across the application lifecycle.
@@ -12,6 +25,8 @@ All notable changes to this project will be documented in this file.
 - **Resource Management**: Optimized RAM and VRAM usage by implementing global instance management for AI models, preventing redundant model loading across retriever.py and vectorstore.py.
 
 - **Architectural Cleanup**: Refactored utility functions and model initialization, adhering to clean architecture principles for the Legal AI Assistant.
+
+
 
 
 ## [1.1.3] - 2026-07-10
@@ -26,6 +41,8 @@ All notable changes to this project will be documented in this file.
 
 
 
+
+
 ## [1.1.2] - 2026-07-09
 ### Added
 - **Cloud Deployment Optimization:** Configured `app.py` for dynamic port binding and secure production mode using environment variables.
@@ -36,11 +53,15 @@ All notable changes to this project will be documented in this file.
 - **Deployment Strategy:** Optimized Dockerfile structure for production deployment on Render.com.
 
 
+
+
 ## [1.1.1] - 2026-07-08
 ### Fixed
 - Resolved dependency conflict between `pinecone-client` and `pinecone`.
 - Updated `requirements.txt` to include compatible dependency versions.
 - update some codelines
+
+
 
 
 ## [1.1.0] - 2026-07-08
@@ -56,6 +77,8 @@ All notable changes to this project will be documented in this file.
 
 
 
+
+
 ## [1.0.0] - 2026-07-06
 ### Added
 - *Multimodal Fallback:* Integrated a fail-safe mechanism (Ollama + Gemini) to ensure system reliability.
@@ -66,6 +89,7 @@ All notable changes to this project will be documented in this file.
 - *Codebase Refactoring:* Reorganized the project structure for improved scalability and clean code standards.
 - *Resource Management:* Implemented lazy-loading for LLM initialization to prevent connection errors and optimize memory usage.
 - *Configuration:* Improved dependency management and environment variable handling.
+
 
 
 

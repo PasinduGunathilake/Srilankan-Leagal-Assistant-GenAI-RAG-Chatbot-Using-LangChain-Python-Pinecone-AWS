@@ -2,8 +2,8 @@ from setuptools import find_packages, setup
 
 # metadata
 setup(
-    name="sri-lankan-legal-ai-assistant",
-    version="1.1.4", 
+    name="Sri_Lankan_RAG_AI_Legal_Information_System",
+    version="1.2.0", 
     author="Pasindu Gunathilake",
     author_email="pasindugunathilake144@gmail.com",
     packages=find_packages(),

@@ -44,21 +44,22 @@ def chat():
             "answer": "I apologize, but the query you have raised is outside the scope of our legal database. Please only inquire about legal matters."
         }), 200
     '''
-    # mmfbm guardrail
+    # 1.mmfbm guardrail check
     if not input_Multimodel_fallback_model_guardrail(msg):
         return jsonify({
             "status": "blocked",
             "answer": "I apologize, but the query you have raised is outside the scope of our legal database. Please only inquire about legal matters."
         }), 200
     
-    # get the response through the system chain(rag_chain.py)
+    # 2.get the response through the system chain(rag_chain.py)
     try:
-        response = system_chain.invoke({"input":msg})
+        response,_ = system_chain(msg)
         return jsonify({
             "status": "success",
-            "answer": response.get('answer')
+            "answer": str(response)
         }), 200
-    except:
+    except Exception as e:
+        print(f"System Error: {e}")
         return jsonify({
             "status": "error",
             "answer": "A system error occurred. Please try again."
@@ -67,7 +68,7 @@ def chat():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
-    debug_mode = os.environ.get("DEBUG", "False").lower() == "true"
+    debug_mode = os.environ.get("DEBUG", "True").lower() == "true"
     app.run(host="0.0.0.0", port=port, debug=debug_mode)
 
 '''
